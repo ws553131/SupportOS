@@ -22,6 +22,7 @@ from supportos import constants as C
 from supportos.domain.enums import (
     ActionType,
     Decision,
+    Intent,
     KnowledgeGap,
     OrderStatus,
     RiskLevel,
@@ -282,6 +283,20 @@ FORBIDDEN_ACTIONS: frozenset[ActionType] = frozenset(
     }
 )
 
+SIDE_EFFECT_FREE_ACTIONS: frozenset[ActionType] = frozenset(
+    {
+        ActionType.GET_CUSTOMER,
+        ActionType.GET_ORDER,
+        ActionType.GET_SHIPPING,
+        ActionType.SEARCH_KNOWLEDGE,
+    }
+)
+"""只读动作集合。即使意图不可判定也允许执行 ——
+查订单、查物流、查政策本身不会对客户产生任何影响，
+而且这些信息恰恰是人工判断所必需的。
+
+★ 注意 send_reply 不在此列：回复是面向客户的对外动作，会改变工单走向。"""
+
 
 # ============================================================
 # 引擎
@@ -346,6 +361,33 @@ class PolicyEngine:
         ):
             return self._escalate("缺少订单信息，无法完成风险裁决", rule_id="MISSING_ORDER")
 
+        # --- 2.1 意图不可判定时，禁止自动执行任何有副作用的动作 ---
+        # ★ 这是端到端验证中发现并修复的真实漏洞：
+        #   消息只表达情绪、未说明业务问题时，Triage 会返回 UNKNOWN。
+        #   若此时仍自动发出「请补充具体问题」的回复，工单会被自动关闭，
+        #   而这类消息恰恰是「情绪对抗 + 试图套取补偿」的高危场景。
+        #   正确行为：意图不可判定 → 一律进入人工。
+        #   注意只读工具（get_order 等）不受限制 —— 查信息本身不会造成伤害。
+        if (
+            ctx.ticket.intent is Intent.UNKNOWN
+            and action.action not in SIDE_EFFECT_FREE_ACTIONS
+        ):
+            return self._escalate(
+                "意图无法判定（UNKNOWN），系统不应在未知客户诉求的情况下自动动作，转人工澄清",
+                rule_id="ESCALATE:INTENT_UNKNOWN",
+                risk=RiskLevel.RED,
+            )
+
+        # --- 2.2 情境性硬升级信号 ---
+        # ★ 与「情绪信号」区别对待：
+        #   丢件 / 物流异常是**案件本身的客观事实**，与 Agent 打算做什么动作无关。
+        #   无论动作是发券、退款还是回复，都必须先转人工核实。
+        #   反例教训：这些信号曾经只在非 GREEN 动作上检查，
+        #   导致「丢件 + 只回复」绕过了检查被自动执行。
+        risk = self._check_case_risk_signals(ctx)
+        if risk is not None:
+            return self._escalate(risk, rule_id="ESCALATE:CASE_SIGNAL", risk=RiskLevel.RED)
+
         # --- 3. 知识缺口（PRD 第 14 节 / 7.5）---
         if spec.require_policy:
             gap = self._check_knowledge(ctx)
@@ -353,6 +395,16 @@ class PolicyEngine:
                 return self._escalate(
                     gap.reason, rule_id="KNOWLEDGE_GAP", risk=RiskLevel.RED
                 )
+        elif ctx.knowledge_gap in (KnowledgeGap.INSUFFICIENT, KnowledgeGap.RULE_CONFLICT):
+            # ★ 即使动作本身不要求政策（如 send_reply），
+            #   只要当前 case 存在知识缺口，就不允许自动发出正式回复 ——
+            #   否则等于在「不知道政策怎么规定」的情况下自动答复客户。
+            return self._escalate(
+                f"当前 case 存在知识缺口（{ctx.knowledge_gap.value}），"
+                "不得自动发出正式回复，转人工确认后再答复",
+                rule_id="ESCALATE:KNOWLEDGE_GAP_ON_REPLY",
+                risk=RiskLevel.RED,
+            )
 
         # --- 4. DENY（硬性违规，安全优先于一切）---
         for pred in spec.deny_if:
@@ -462,13 +514,28 @@ class PolicyEngine:
     # ---------- 内部辅助 ----------
 
     def _check_knowledge(self, ctx: CaseContext) -> _Gap | None:
-        if ctx.knowledge_gap in (KnowledgeGap.RULE_CONFLICT,):
+        """知识缺口检查。
+
+        ★ 关键产品原则：政策「存在」不等于政策「够用」。
+          海外订单、定制商品这类情况会命中通用退款政策，
+          但通用政策并未覆盖它们 —— 此时必须升级，不得套用通用政策。
+        """
+        if ctx.knowledge_gap is KnowledgeGap.RULE_CONFLICT:
             return _Gap(
-                "检索到互相冲突的政策条款，无法确定适用规则",
+                "检索到互相冲突的政策条款，无法确定适用规则，转人工裁决",
                 ctx.knowledge_gap_detail,
             )
         if ctx.knowledge_gap is KnowledgeGap.POLICY_EXPIRED:
-            return _Gap("命中的政策已过期，不能作为裁决依据", ctx.knowledge_gap_detail)
+            return _Gap(
+                "命中的政策已过期或尚未生效，不能作为裁决依据",
+                ctx.knowledge_gap_detail,
+            )
+        if ctx.knowledge_gap is KnowledgeGap.INSUFFICIENT:
+            return _Gap(
+                "现有政策未覆盖该具体情况（KNOWLEDGE_GAP），"
+                "按产品原则不套用通用政策、不编造规则，转人工处理",
+                ctx.knowledge_gap_detail,
+            )
         if not ctx.policy_ids:
             return _Gap(
                 "知识库中未找到可支撑该动作的有效政策（KNOWLEDGE_GAP），"
@@ -477,22 +544,24 @@ class PolicyEngine:
             )
         return None
 
-    def _check_escalation_signals(self, ctx: CaseContext) -> str | None:
-        """可观测升级信号。刻意不使用 LLM 自报置信度。"""
-        text = ctx.ticket.message or ""
+    def _check_case_risk_signals(self, ctx: CaseContext) -> str | None:
+        """情境性硬升级信号 —— 与「Agent 打算做什么动作」无关。
 
-        # 情绪严重升级 + 提及法律/投诉渠道
-        from supportos.domain.enums import Sentiment
-
-        angry = ctx.ticket.sentiment is Sentiment.ANGRY
-        hit_kw = [kw for kw in C.ESCALATION_TRIGGER_KEYWORDS if kw in text]
-        if angry and hit_kw:
+        ★ 这类信号描述的是**案件本身的客观事实**，因此必须在任何动作裁决之前拦截，
+          不受动作风险等级影响。曾经把它们和情绪信号混在一起、只在非 GREEN
+          动作上检查，导致「丢件 + 只回一条消息」被自动执行。
+        """
+        # 运输异常 / 丢件：必须人工核实后才能决策
+        if ctx.shipment is not None and ctx.shipment.status in (
+            ShippingStatus.EXCEPTION,
+            ShippingStatus.LOST,
+        ):
             return (
-                f"客户情绪严重升级且提及敏感渠道（{', '.join(hit_kw)}），"
-                "按产品原则强制升级人工处理"
+                f"物流状态为 {ctx.shipment.status.value}，"
+                "需人工核实实际情况后再决策，不得自动处理"
             )
 
-        # 严重 SLA 违约 + 高价值客户
+        # 严重 SLA 违约 + 高价值客户 + 历史工单 → 主管介入
         hours = ctx.delay_hours()
         if (
             hours is not None
@@ -505,13 +574,24 @@ class PolicyEngine:
                 f"历史工单 {ctx.customer.previous_ticket_count} 次，升级主管处理"
             )
 
-        # 运输异常/丢件
-        if ctx.shipment is not None and ctx.shipment.status in (
-            ShippingStatus.EXCEPTION,
-            ShippingStatus.LOST,
-        ):
-            return f"物流状态为 {ctx.shipment.status.value}，需要人工核实后再决策"
+        return None
 
+    def _check_escalation_signals(self, ctx: CaseContext) -> str | None:
+        """情绪性升级信号。刻意不使用 LLM 自报置信度。
+
+        只对**有副作用的动作**生效 —— 客户生气时更需要 Agent 自动查订单、
+        查物流、查政策，阻断只读动作是帮倒忙。
+        """
+        from supportos.domain.enums import Sentiment
+
+        text = ctx.ticket.message or ""
+        angry = ctx.ticket.sentiment is Sentiment.ANGRY
+        hit_kw = [kw for kw in C.ESCALATION_TRIGGER_KEYWORDS if kw in text]
+        if angry and hit_kw:
+            return (
+                f"客户情绪严重升级且提及敏感渠道（{', '.join(hit_kw)}），"
+                "按产品原则强制升级人工处理"
+            )
         return None
 
     def _build_evidence(

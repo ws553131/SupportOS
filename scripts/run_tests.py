@@ -38,7 +38,19 @@ class _Mark:
             for v in argvalues:
                 vals = v if isinstance(v, (tuple, list)) else (v,)
                 cases.append(dict(zip(names, vals)))
-            fn._parametrize = cases
+            # ★ 支持叠加 @parametrize：真实 pytest 会做笛卡尔积。
+            #   叠加时内层装饰器先执行，若无条件覆盖，只会剩下最后一组参数。
+            prev = getattr(fn, "_parametrize", None)
+            if prev:
+                merged = []
+                for a in prev:
+                    for b in cases:
+                        m = dict(a)
+                        m.update(b)
+                        merged.append(m)
+                fn._parametrize = merged
+            else:
+                fn._parametrize = cases
             return fn
 
         return deco
@@ -68,6 +80,36 @@ class _PytestShim:
             return fn
 
         return inner
+
+    @staticmethod
+    def raises(expected, match=None):
+        """pytest.raises 的最小实现，支持 match 正则匹配。"""
+
+        class _Ctx:
+            def __init__(self):
+                self.value = None
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                if exc_type is None:
+                    raise AssertionError(
+                        f"期望抛出 {expected.__name__}，但没有抛出任何异常"
+                    )
+                if not issubclass(exc_type, expected):
+                    return False  # 其他异常正常传播
+                self.value = exc
+                if match is not None:
+                    import re
+
+                    if not re.search(match, str(exc)):
+                        raise AssertionError(
+                            f"{exc_type.__name__} 消息不匹配 {match!r}：{exc}"
+                        ) from exc
+                return True  # 吞掉期望的异常
+
+        return _Ctx()
 
 
 # ------------------------------------------------------------
@@ -111,6 +153,7 @@ def main(argv: list[str]) -> int:
     fake = types.ModuleType("pytest")
     fake.mark = _Mark()
     fake.fixture = _PytestShim.fixture
+    fake.raises = _PytestShim.raises
     sys.modules["pytest"] = fake
 
     targets = [Path(a) for a in argv[1:]] or sorted((ROOT / "tests").glob("test_*.py"))

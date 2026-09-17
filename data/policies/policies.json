@@ -1,0 +1,247 @@
+{
+  "_comment": "SupportOS 客服政策知识库。★ 刻意使用结构化规则而非向量检索：政策裁决需要确定性、可审计、可复现的结果，语义相似度会引入不可控随机性。",
+  "version": "2026.09",
+  "policies": [
+    {
+      "policy_id": "SHIPPING_DELAY_POLICY_V3",
+      "title": "物流延迟补偿政策",
+      "version": "V3",
+      "effective_date": "2026-01-01",
+      "expires_date": null,
+      "applies_to_intents": ["SHIPPING_DELAY"],
+      "sections": [
+        {
+          "section": "3.1",
+          "condition": "delay_hours > 72",
+          "action": "offer_coupon",
+          "params": { "min": 10, "max": 30 },
+          "text": "订单实际送达时间超过预计到达时间 72 小时以上，可向客户提供 ¥10~¥30 优惠券作为补偿。"
+        },
+        {
+          "section": "3.2",
+          "condition": "delay_hours > 168",
+          "action": "offer_coupon",
+          "params": { "min": 30, "max": 50 },
+          "text": "延迟超过 168 小时（7 天），补偿上限提升至 ¥50，但超过 ¥30 部分需主管审批。"
+        },
+        {
+          "section": "3.3",
+          "condition": "customer_tier in ('VIP','SVIP') and delay_hours > 72",
+          "action": "priority_handling",
+          "params": {},
+          "text": "VIP/SVIP 客户的延迟工单需标记高优先级并优先处理。"
+        },
+        {
+          "section": "3.4",
+          "condition": "shipping_status in ('EXCEPTION','LOST')",
+          "action": "escalate",
+          "params": {},
+          "text": "物流状态异常或丢件时，不得由 AI 直接给出补偿方案，必须转人工核实。"
+        },
+        {
+          "section": "3.5",
+          "condition": "delay_hours <= 72",
+          "action": "explain_only",
+          "params": {},
+          "text": "延迟未达 72 小时，仅向客户说明物流进度，不提供补偿。"
+        }
+      ]
+    },
+    {
+      "policy_id": "DAMAGED_ITEM_POLICY_V2",
+      "title": "商品破损处理政策",
+      "version": "V2",
+      "effective_date": "2026-01-01",
+      "expires_date": null,
+      "applies_to_intents": ["DAMAGED_ITEM"],
+      "sections": [
+        {
+          "section": "2.1",
+          "condition": "has_damage_evidence and within_after_sale_window",
+          "action": "request_replacement",
+          "params": {},
+          "text": "客户提供破损证据且在售后期限内，可安排免费补发。"
+        },
+        {
+          "section": "2.2",
+          "condition": "not has_damage_evidence",
+          "action": "escalate",
+          "params": {},
+          "text": "无破损证据时不得认定责任，需人工核实。"
+        },
+        {
+          "section": "2.3",
+          "condition": "order_amount > 500",
+          "action": "escalate",
+          "params": { "threshold": 500 },
+          "text": "商品价值超过 ¥500 的补发需主管审批。"
+        },
+        {
+          "section": "2.4",
+          "condition": "customer_prefers_refund",
+          "action": "allow_refund",
+          "params": {},
+          "text": "破损商品客户可选择补发或退款，退款按退款政策执行。"
+        },
+        {
+          "section": "2.5",
+          "condition": "not within_after_sale_window",
+          "action": "deny",
+          "params": {},
+          "text": "超出 15 天售后期限的破损申请不予受理。"
+        }
+      ]
+    },
+    {
+      "policy_id": "REFUND_POLICY_V4",
+      "title": "退款政策",
+      "version": "V4",
+      "effective_date": "2026-03-01",
+      "expires_date": null,
+      "applies_to_intents": ["REFUND_REQUEST", "DAMAGED_ITEM"],
+      "sections": [
+        {
+          "section": "4.1",
+          "condition": "within_after_sale_window and order_status in ('PAID','SHIPPED','DELIVERED')",
+          "action": "allow_refund",
+          "params": {},
+          "text": "订单在售后期限内且状态正常，可受理退款申请。"
+        },
+        {
+          "section": "4.2",
+          "condition": "amount <= 200",
+          "action": "refund_with_approval",
+          "params": { "approval_threshold": 200 },
+          "text": "退款金额不超过 ¥200，由客服主管审批后执行。"
+        },
+        {
+          "section": "4.3",
+          "condition": "amount > 200",
+          "action": "escalate",
+          "params": { "threshold": 200 },
+          "text": "退款金额超过 ¥200，必须升级至更高权限角色处理。"
+        },
+        {
+          "section": "4.4",
+          "condition": "customer_refund_count_12m >= 3",
+          "action": "escalate",
+          "params": { "threshold": 3 },
+          "text": "客户 12 个月内退款次数达到 3 次及以上，视为异常，需人工审核。"
+        },
+        {
+          "section": "4.5",
+          "condition": "order_status in ('REFUNDED','CLOSED','PENDING_PAYMENT')",
+          "action": "deny",
+          "params": {},
+          "text": "订单已退款、已关闭或未支付，不满足退款前置条件。"
+        },
+        {
+          "section": "4.6",
+          "condition": "not within_after_sale_window",
+          "action": "deny",
+          "params": {},
+          "text": "超出 15 天售后期限的退款申请不予受理。"
+        }
+      ]
+    },
+    {
+      "policy_id": "COUPON_POLICY_V3",
+      "title": "优惠券发放政策",
+      "version": "V3",
+      "effective_date": "2026-01-01",
+      "expires_date": null,
+      "applies_to_intents": ["SHIPPING_DELAY"],
+      "sections": [
+        {
+          "section": "5.1",
+          "condition": "always",
+          "action": "limit_per_ticket",
+          "params": { "max": 30 },
+          "text": "单个工单发放优惠券金额不得超过 ¥30（AI 上限）。"
+        },
+        {
+          "section": "5.2",
+          "condition": "customer_coupon_count_7d >= 2",
+          "action": "escalate",
+          "params": { "threshold": 2 },
+          "text": "同一客户 7 日内已领取 2 次及以上优惠券，需人工审核，防止重复补偿。"
+        },
+        {
+          "section": "5.3",
+          "condition": "daily_coupon_total > 500",
+          "action": "escalate",
+          "params": { "threshold": 500 },
+          "text": "单个客服当日累计发放优惠券超过 ¥500，需主管审批。"
+        },
+        {
+          "section": "5.4",
+          "condition": "always",
+          "action": "forbid_commitment_without_approval",
+          "params": {},
+          "text": "回复中包含金额、时限等承诺性表述时，必须经人工确认后方可发送。"
+        }
+      ]
+    },
+    {
+      "policy_id": "COMPLAINT_ESCALATION_POLICY_V1",
+      "title": "投诉升级政策",
+      "version": "V1",
+      "effective_date": "2026-01-01",
+      "expires_date": null,
+      "applies_to_intents": ["SHIPPING_DELAY", "DAMAGED_ITEM", "REFUND_REQUEST"],
+      "sections": [
+        {
+          "section": "1.1",
+          "condition": "sentiment == 'ANGRY' and mentions_legal_channel",
+          "action": "escalate",
+          "params": {},
+          "text": "客户情绪严重升级且提及消协、投诉、起诉、媒体等渠道时，必须立即转人工，不得由 AI 自行补偿。"
+        },
+        {
+          "section": "1.2",
+          "condition": "customer_tier in ('VIP','SVIP') and unresolved_tickets >= 2",
+          "action": "escalate",
+          "params": {},
+          "text": "VIP/SVIP 客户存在 2 个以上未解决工单时，升级至主管处理。"
+        },
+        {
+          "section": "1.3",
+          "condition": "always",
+          "action": "forbid_ai_judgement",
+          "params": {},
+          "text": "AI 不得对投诉责任作出判定，仅可整理事实与政策依据供人工决策。"
+        }
+      ]
+    },
+    {
+      "policy_id": "INTL_REFUND_POLICY_V1",
+      "title": "海外订单退款政策（V0.1 未覆盖）",
+      "version": "V1",
+      "effective_date": "2027-01-01",
+      "expires_date": null,
+      "applies_to_intents": ["REFUND_REQUEST"],
+      "sections": [],
+      "_coverage_note": "此政策尚未生效（effective_date 在未来），命中时应视为无效政策，触发 KNOWLEDGE_GAP。用于测试政策有效期校验。"
+    }
+  ],
+  "known_gaps": [
+    {
+      "gap_id": "GAP-001",
+      "intent": "REFUND_REQUEST",
+      "pattern": ["海外", "跨境", "国际", "境外", "海关"],
+      "detail": "暂未找到海外/跨境订单部分退款的明确规则，需要人工确认适用的退款比例与税费处理方式。"
+    },
+    {
+      "gap_id": "GAP-002",
+      "intent": "DAMAGED_ITEM",
+      "pattern": ["定制", "预售", "刻字", "个性化"],
+      "detail": "暂未找到定制类商品破损的处理规则，定制商品通常不支持退货，需人工确认。"
+    },
+    {
+      "gap_id": "GAP-003",
+      "intent": "REFUND_REQUEST",
+      "pattern": ["组合购", "套装", "满减", "凑单"],
+      "detail": "暂未找到组合购买订单部分退款的金额计算规则（涉及优惠分摊），需人工核算。"
+    }
+  ]
+}

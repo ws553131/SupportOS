@@ -120,3 +120,6 @@ class KnowledgeGap(str, Enum):
     NO_POLICY_FOUND = "NO_POLICY_FOUND"
     POLICY_EXPIRED = "POLICY_EXPIRED"
     RULE_CONFLICT = "RULE_CONFLICT"
+    INSUFFICIENT = "INSUFFICIENT"
+    """命中了通用政策，但未覆盖当前具体情况（如海外订单、定制商品）。
+    政策存在不等于政策够用 —— 这是真实客服里最常见的一类缺口。"""

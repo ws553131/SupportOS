@@ -1,0 +1,2592 @@
+{
+  "meta": {
+    "seed": 20260917,
+    "base_day": "2026-09-17T10:00:00",
+    "edge_cases": 20,
+    "baseline_cases": 6,
+    "customers": 56,
+    "orders": 100,
+    "shipments": 100,
+    "note": "刻意埋入边缘 case；随机种子固定，结果可复现"
+  },
+  "customers": [
+    {
+      "customer_id": "C0001",
+      "name": "客户0001",
+      "tier": "NORMAL",
+      "order_count": 11,
+      "lifetime_value": 2003.16,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0002",
+      "name": "客户0002",
+      "tier": "NORMAL",
+      "order_count": 10,
+      "lifetime_value": 3218.14,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0003",
+      "name": "客户0003",
+      "tier": "VIP",
+      "order_count": 10,
+      "lifetime_value": 4275.43,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0004",
+      "name": "客户0004",
+      "tier": "NORMAL",
+      "order_count": 14,
+      "lifetime_value": 10287.54,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0005",
+      "name": "客户0005",
+      "tier": "NORMAL",
+      "order_count": 7,
+      "lifetime_value": 8816.8,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0006",
+      "name": "客户0006",
+      "tier": "NORMAL",
+      "order_count": 15,
+      "lifetime_value": 7137.45,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0007",
+      "name": "客户0007",
+      "tier": "NORMAL",
+      "order_count": 14,
+      "lifetime_value": 11762.56,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0008",
+      "name": "客户0008",
+      "tier": "VIP",
+      "order_count": 13,
+      "lifetime_value": 514.53,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0009",
+      "name": "客户0009",
+      "tier": "NORMAL",
+      "order_count": 6,
+      "lifetime_value": 3028.62,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0010",
+      "name": "客户0010",
+      "tier": "NORMAL",
+      "order_count": 15,
+      "lifetime_value": 2803.49,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0011",
+      "name": "客户0011",
+      "tier": "NORMAL",
+      "order_count": 5,
+      "lifetime_value": 4117.46,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0012",
+      "name": "客户0012",
+      "tier": "NORMAL",
+      "order_count": 11,
+      "lifetime_value": 6168.36,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0013",
+      "name": "客户0013",
+      "tier": "NORMAL",
+      "order_count": 6,
+      "lifetime_value": 847.21,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0014",
+      "name": "客户0014",
+      "tier": "NORMAL",
+      "order_count": 10,
+      "lifetime_value": 2837.52,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0015",
+      "name": "客户0015",
+      "tier": "NORMAL",
+      "order_count": 13,
+      "lifetime_value": 11732.66,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0016",
+      "name": "客户0016",
+      "tier": "NORMAL",
+      "order_count": 9,
+      "lifetime_value": 1762.0,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0017",
+      "name": "客户0017",
+      "tier": "NORMAL",
+      "order_count": 8,
+      "lifetime_value": 10317.68,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0018",
+      "name": "客户0018",
+      "tier": "VIP",
+      "order_count": 10,
+      "lifetime_value": 8630.56,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0019",
+      "name": "客户0019",
+      "tier": "NORMAL",
+      "order_count": 5,
+      "lifetime_value": 8051.62,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 2,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0020",
+      "name": "客户0020",
+      "tier": "NORMAL",
+      "order_count": 10,
+      "lifetime_value": 5691.95,
+      "refund_count_12m": 4,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C9001",
+      "name": "客户9001",
+      "tier": "NORMAL",
+      "order_count": 8,
+      "lifetime_value": 4732.25,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C9002",
+      "name": "客户9002",
+      "tier": "NORMAL",
+      "order_count": 8,
+      "lifetime_value": 877.48,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C9003",
+      "name": "客户9003",
+      "tier": "NORMAL",
+      "order_count": 3,
+      "lifetime_value": 2448.96,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C9004",
+      "name": "客户9004",
+      "tier": "NORMAL",
+      "order_count": 3,
+      "lifetime_value": 3314.81,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C9005",
+      "name": "客户9005",
+      "tier": "NORMAL",
+      "order_count": 5,
+      "lifetime_value": 890.18,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C9006",
+      "name": "客户9006",
+      "tier": "NORMAL",
+      "order_count": 6,
+      "lifetime_value": 1760.81,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0021",
+      "name": "客户21",
+      "tier": "NORMAL",
+      "order_count": 19,
+      "lifetime_value": 5124.39,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0022",
+      "name": "客户22",
+      "tier": "NORMAL",
+      "order_count": 19,
+      "lifetime_value": 8640.67,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0023",
+      "name": "客户23",
+      "tier": "VIP",
+      "order_count": 20,
+      "lifetime_value": 3717.98,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0024",
+      "name": "客户24",
+      "tier": "NORMAL",
+      "order_count": 15,
+      "lifetime_value": 5928.44,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0025",
+      "name": "客户25",
+      "tier": "VIP",
+      "order_count": 20,
+      "lifetime_value": 10292.24,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0026",
+      "name": "客户26",
+      "tier": "NORMAL",
+      "order_count": 3,
+      "lifetime_value": 3113.16,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0027",
+      "name": "客户27",
+      "tier": "VIP",
+      "order_count": 8,
+      "lifetime_value": 9211.84,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0028",
+      "name": "客户28",
+      "tier": "NORMAL",
+      "order_count": 2,
+      "lifetime_value": 2649.12,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0029",
+      "name": "客户29",
+      "tier": "NORMAL",
+      "order_count": 12,
+      "lifetime_value": 10865.88,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0030",
+      "name": "客户30",
+      "tier": "SVIP",
+      "order_count": 2,
+      "lifetime_value": 5834.89,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0031",
+      "name": "客户31",
+      "tier": "NORMAL",
+      "order_count": 7,
+      "lifetime_value": 18259.2,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0032",
+      "name": "客户32",
+      "tier": "NORMAL",
+      "order_count": 15,
+      "lifetime_value": 13799.95,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0033",
+      "name": "客户33",
+      "tier": "NORMAL",
+      "order_count": 13,
+      "lifetime_value": 16574.22,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0034",
+      "name": "客户34",
+      "tier": "NORMAL",
+      "order_count": 18,
+      "lifetime_value": 4346.56,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0035",
+      "name": "客户35",
+      "tier": "NORMAL",
+      "order_count": 8,
+      "lifetime_value": 11115.0,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0036",
+      "name": "客户36",
+      "tier": "NORMAL",
+      "order_count": 17,
+      "lifetime_value": 12491.99,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0037",
+      "name": "客户37",
+      "tier": "VIP",
+      "order_count": 10,
+      "lifetime_value": 8480.92,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0038",
+      "name": "客户38",
+      "tier": "NORMAL",
+      "order_count": 16,
+      "lifetime_value": 17615.42,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0039",
+      "name": "客户39",
+      "tier": "NORMAL",
+      "order_count": 13,
+      "lifetime_value": 9360.33,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0040",
+      "name": "客户40",
+      "tier": "NORMAL",
+      "order_count": 9,
+      "lifetime_value": 14026.11,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0041",
+      "name": "客户41",
+      "tier": "NORMAL",
+      "order_count": 2,
+      "lifetime_value": 11254.48,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0042",
+      "name": "客户42",
+      "tier": "NORMAL",
+      "order_count": 1,
+      "lifetime_value": 3965.71,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 3
+    },
+    {
+      "customer_id": "C0043",
+      "name": "客户43",
+      "tier": "NORMAL",
+      "order_count": 6,
+      "lifetime_value": 10834.23,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0044",
+      "name": "客户44",
+      "tier": "NORMAL",
+      "order_count": 10,
+      "lifetime_value": 10671.62,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0045",
+      "name": "客户45",
+      "tier": "NORMAL",
+      "order_count": 7,
+      "lifetime_value": 12328.82,
+      "refund_count_12m": 2,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0046",
+      "name": "客户46",
+      "tier": "NORMAL",
+      "order_count": 17,
+      "lifetime_value": 17580.7,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0047",
+      "name": "客户47",
+      "tier": "VIP",
+      "order_count": 19,
+      "lifetime_value": 8543.44,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 2
+    },
+    {
+      "customer_id": "C0048",
+      "name": "客户48",
+      "tier": "NORMAL",
+      "order_count": 14,
+      "lifetime_value": 2733.24,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 1,
+      "previous_ticket_count": 0
+    },
+    {
+      "customer_id": "C0049",
+      "name": "客户49",
+      "tier": "NORMAL",
+      "order_count": 16,
+      "lifetime_value": 12354.46,
+      "refund_count_12m": 1,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 1
+    },
+    {
+      "customer_id": "C0050",
+      "name": "客户50",
+      "tier": "VIP",
+      "order_count": 8,
+      "lifetime_value": 7366.34,
+      "refund_count_12m": 0,
+      "coupon_count_7d": 0,
+      "previous_ticket_count": 0
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "A1001",
+      "customer_id": "C0001",
+      "amount": 199.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1002",
+      "customer_id": "C0002",
+      "amount": 299.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1003",
+      "customer_id": "C0003",
+      "amount": 899.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1004",
+      "customer_id": "C0004",
+      "amount": 259.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1005",
+      "customer_id": "C0005",
+      "amount": 459.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1006",
+      "customer_id": "C0006",
+      "amount": 299.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A1007",
+      "customer_id": "C0007",
+      "amount": 199.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1008",
+      "customer_id": "C0008",
+      "amount": 1280.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A1009",
+      "customer_id": "C0009",
+      "amount": 399.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-08-13T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A1010",
+      "customer_id": "C0010",
+      "amount": 680.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A1011",
+      "customer_id": "C0011",
+      "amount": 200.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1012",
+      "customer_id": "C0012",
+      "amount": 299.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1013",
+      "customer_id": "C0013",
+      "amount": 159.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-08-17T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1014",
+      "customer_id": "C0014",
+      "amount": 259.0,
+      "status": "REFUNDED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1015",
+      "customer_id": "C0015",
+      "amount": 899.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1016",
+      "customer_id": "C0016",
+      "amount": 599.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1017",
+      "customer_id": "C0017",
+      "amount": 299.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1018",
+      "customer_id": "C0018",
+      "amount": 1299.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1019",
+      "customer_id": "C0019",
+      "amount": 99.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A1020",
+      "customer_id": "C0020",
+      "amount": 189.0,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9001",
+      "customer_id": "C9001",
+      "amount": 168.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9002",
+      "customer_id": "C9002",
+      "amount": 259.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9003",
+      "customer_id": "C9003",
+      "amount": 399.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9004",
+      "customer_id": "C9004",
+      "amount": 199.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9005",
+      "customer_id": "C9005",
+      "amount": 99.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A9006",
+      "customer_id": "C9006",
+      "amount": 329.0,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-16T10:00:00",
+      "item_name": "商品",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2000",
+      "customer_id": "C0025",
+      "amount": 793.44,
+      "status": "DELIVERED",
+      "created_at": "2026-08-15T10:00:00",
+      "delivered_at": "2026-08-18T10:00:00",
+      "item_name": "运动鞋",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2001",
+      "customer_id": "C0021",
+      "amount": 1223.47,
+      "status": "DELIVERED",
+      "created_at": "2026-09-07T10:00:00",
+      "delivered_at": "2026-09-12T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2002",
+      "customer_id": "C0041",
+      "amount": 1316.97,
+      "status": "DELIVERED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": "2026-09-03T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2003",
+      "customer_id": "C0023",
+      "amount": 404.65,
+      "status": "SHIPPED",
+      "created_at": "2026-08-22T10:00:00",
+      "delivered_at": null,
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2004",
+      "customer_id": "C0049",
+      "amount": 959.44,
+      "status": "DELIVERED",
+      "created_at": "2026-08-05T10:00:00",
+      "delivered_at": "2026-08-09T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2005",
+      "customer_id": "C0021",
+      "amount": 1432.92,
+      "status": "DELIVERED",
+      "created_at": "2026-08-07T10:00:00",
+      "delivered_at": "2026-08-09T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2006",
+      "customer_id": "C0034",
+      "amount": 1579.6,
+      "status": "DELIVERED",
+      "created_at": "2026-07-21T10:00:00",
+      "delivered_at": "2026-07-26T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2007",
+      "customer_id": "C0026",
+      "amount": 1198.18,
+      "status": "REFUNDED",
+      "created_at": "2026-08-02T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2008",
+      "customer_id": "C0029",
+      "amount": 1290.95,
+      "status": "DELIVERED",
+      "created_at": "2026-07-23T10:00:00",
+      "delivered_at": "2026-07-29T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2009",
+      "customer_id": "C0023",
+      "amount": 80.97,
+      "status": "DELIVERED",
+      "created_at": "2026-08-26T10:00:00",
+      "delivered_at": "2026-08-30T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2010",
+      "customer_id": "C0047",
+      "amount": 300.8,
+      "status": "DELIVERED",
+      "created_at": "2026-08-07T10:00:00",
+      "delivered_at": "2026-08-08T10:00:00",
+      "item_name": "运动鞋",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2011",
+      "customer_id": "C0032",
+      "amount": 539.26,
+      "status": "DELIVERED",
+      "created_at": "2026-08-21T10:00:00",
+      "delivered_at": "2026-08-26T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2012",
+      "customer_id": "C0030",
+      "amount": 1979.04,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-13T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2013",
+      "customer_id": "C0035",
+      "amount": 1917.47,
+      "status": "DELIVERED",
+      "created_at": "2026-07-24T10:00:00",
+      "delivered_at": "2026-07-27T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2014",
+      "customer_id": "C0040",
+      "amount": 1175.19,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-12T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2015",
+      "customer_id": "C0042",
+      "amount": 1806.37,
+      "status": "DELIVERED",
+      "created_at": "2026-08-06T10:00:00",
+      "delivered_at": "2026-08-09T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2016",
+      "customer_id": "C0039",
+      "amount": 1069.08,
+      "status": "PAID",
+      "created_at": "2026-08-22T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2017",
+      "customer_id": "C0035",
+      "amount": 1755.1,
+      "status": "DELIVERED",
+      "created_at": "2026-09-07T10:00:00",
+      "delivered_at": "2026-09-10T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2018",
+      "customer_id": "C0042",
+      "amount": 1575.76,
+      "status": "CLOSED",
+      "created_at": "2026-08-28T10:00:00",
+      "delivered_at": null,
+      "item_name": "背包",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2019",
+      "customer_id": "C0027",
+      "amount": 259.08,
+      "status": "SHIPPED",
+      "created_at": "2026-08-01T10:00:00",
+      "delivered_at": null,
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2020",
+      "customer_id": "C0046",
+      "amount": 1812.61,
+      "status": "DELIVERED",
+      "created_at": "2026-09-08T10:00:00",
+      "delivered_at": "2026-09-13T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2021",
+      "customer_id": "C0042",
+      "amount": 746.36,
+      "status": "DELIVERED",
+      "created_at": "2026-08-03T10:00:00",
+      "delivered_at": "2026-08-09T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2022",
+      "customer_id": "C0030",
+      "amount": 1252.27,
+      "status": "DELIVERED",
+      "created_at": "2026-07-27T10:00:00",
+      "delivered_at": "2026-07-29T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2023",
+      "customer_id": "C0026",
+      "amount": 504.32,
+      "status": "DELIVERED",
+      "created_at": "2026-07-28T10:00:00",
+      "delivered_at": "2026-07-29T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2024",
+      "customer_id": "C0035",
+      "amount": 1301.1,
+      "status": "DELIVERED",
+      "created_at": "2026-08-04T10:00:00",
+      "delivered_at": "2026-08-06T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2025",
+      "customer_id": "C0037",
+      "amount": 1581.89,
+      "status": "DELIVERED",
+      "created_at": "2026-08-20T10:00:00",
+      "delivered_at": "2026-08-25T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2026",
+      "customer_id": "C0039",
+      "amount": 1108.58,
+      "status": "SHIPPED",
+      "created_at": "2026-07-23T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2027",
+      "customer_id": "C0045",
+      "amount": 1008.48,
+      "status": "DELIVERED",
+      "created_at": "2026-08-05T10:00:00",
+      "delivered_at": "2026-08-10T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2028",
+      "customer_id": "C0032",
+      "amount": 863.41,
+      "status": "SHIPPED",
+      "created_at": "2026-08-24T10:00:00",
+      "delivered_at": null,
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2029",
+      "customer_id": "C0039",
+      "amount": 1162.07,
+      "status": "DELIVERED",
+      "created_at": "2026-07-21T10:00:00",
+      "delivered_at": "2026-07-27T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2030",
+      "customer_id": "C0025",
+      "amount": 1380.63,
+      "status": "DELIVERED",
+      "created_at": "2026-08-25T10:00:00",
+      "delivered_at": "2026-08-31T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2031",
+      "customer_id": "C0025",
+      "amount": 785.7,
+      "status": "DELIVERED",
+      "created_at": "2026-09-13T10:00:00",
+      "delivered_at": "2026-09-14T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2032",
+      "customer_id": "C0033",
+      "amount": 620.47,
+      "status": "REFUNDED",
+      "created_at": "2026-08-30T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2033",
+      "customer_id": "C0047",
+      "amount": 358.77,
+      "status": "DELIVERED",
+      "created_at": "2026-09-04T10:00:00",
+      "delivered_at": "2026-09-08T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2034",
+      "customer_id": "C0031",
+      "amount": 1454.39,
+      "status": "PAID",
+      "created_at": "2026-08-20T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2035",
+      "customer_id": "C0040",
+      "amount": 283.23,
+      "status": "DELIVERED",
+      "created_at": "2026-08-07T10:00:00",
+      "delivered_at": "2026-08-11T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2036",
+      "customer_id": "C0047",
+      "amount": 877.81,
+      "status": "REFUNDED",
+      "created_at": "2026-08-01T10:00:00",
+      "delivered_at": null,
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2037",
+      "customer_id": "C0032",
+      "amount": 1235.32,
+      "status": "DELIVERED",
+      "created_at": "2026-08-03T10:00:00",
+      "delivered_at": "2026-08-09T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2038",
+      "customer_id": "C0031",
+      "amount": 437.47,
+      "status": "DELIVERED",
+      "created_at": "2026-08-12T10:00:00",
+      "delivered_at": "2026-08-17T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2039",
+      "customer_id": "C0030",
+      "amount": 1600.86,
+      "status": "DELIVERED",
+      "created_at": "2026-09-09T10:00:00",
+      "delivered_at": "2026-09-15T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2040",
+      "customer_id": "C0038",
+      "amount": 1879.82,
+      "status": "SHIPPED",
+      "created_at": "2026-09-12T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2041",
+      "customer_id": "C0033",
+      "amount": 1159.84,
+      "status": "DELIVERED",
+      "created_at": "2026-09-08T10:00:00",
+      "delivered_at": "2026-09-14T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2042",
+      "customer_id": "C0034",
+      "amount": 1329.26,
+      "status": "SHIPPED",
+      "created_at": "2026-08-25T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2043",
+      "customer_id": "C0050",
+      "amount": 370.49,
+      "status": "DELIVERED",
+      "created_at": "2026-08-19T10:00:00",
+      "delivered_at": "2026-08-23T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2044",
+      "customer_id": "C0048",
+      "amount": 740.42,
+      "status": "SHIPPED",
+      "created_at": "2026-09-14T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2045",
+      "customer_id": "C0033",
+      "amount": 1014.4,
+      "status": "DELIVERED",
+      "created_at": "2026-09-08T10:00:00",
+      "delivered_at": "2026-09-12T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2046",
+      "customer_id": "C0034",
+      "amount": 1984.41,
+      "status": "DELIVERED",
+      "created_at": "2026-07-30T10:00:00",
+      "delivered_at": "2026-08-03T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2047",
+      "customer_id": "C0033",
+      "amount": 1514.87,
+      "status": "DELIVERED",
+      "created_at": "2026-08-29T10:00:00",
+      "delivered_at": "2026-09-02T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2048",
+      "customer_id": "C0045",
+      "amount": 1154.03,
+      "status": "DELIVERED",
+      "created_at": "2026-09-07T10:00:00",
+      "delivered_at": "2026-09-11T10:00:00",
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2049",
+      "customer_id": "C0023",
+      "amount": 1976.57,
+      "status": "DELIVERED",
+      "created_at": "2026-08-18T10:00:00",
+      "delivered_at": "2026-08-23T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2050",
+      "customer_id": "C0026",
+      "amount": 762.54,
+      "status": "DELIVERED",
+      "created_at": "2026-09-06T10:00:00",
+      "delivered_at": "2026-09-12T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2051",
+      "customer_id": "C0026",
+      "amount": 1737.31,
+      "status": "DELIVERED",
+      "created_at": "2026-08-04T10:00:00",
+      "delivered_at": "2026-08-06T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2052",
+      "customer_id": "C0037",
+      "amount": 1955.44,
+      "status": "DELIVERED",
+      "created_at": "2026-07-26T10:00:00",
+      "delivered_at": "2026-07-29T10:00:00",
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2053",
+      "customer_id": "C0040",
+      "amount": 682.56,
+      "status": "DELIVERED",
+      "created_at": "2026-09-07T10:00:00",
+      "delivered_at": "2026-09-09T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2054",
+      "customer_id": "C0035",
+      "amount": 1708.48,
+      "status": "DELIVERED",
+      "created_at": "2026-08-23T10:00:00",
+      "delivered_at": "2026-08-29T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2055",
+      "customer_id": "C0043",
+      "amount": 1927.83,
+      "status": "REFUNDED",
+      "created_at": "2026-09-08T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2056",
+      "customer_id": "C0036",
+      "amount": 679.08,
+      "status": "DELIVERED",
+      "created_at": "2026-08-16T10:00:00",
+      "delivered_at": "2026-08-20T10:00:00",
+      "item_name": "运动鞋",
+      "has_damage_evidence": true
+    },
+    {
+      "order_id": "A2057",
+      "customer_id": "C0034",
+      "amount": 1721.25,
+      "status": "DELIVERED",
+      "created_at": "2026-08-17T10:00:00",
+      "delivered_at": "2026-08-20T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2058",
+      "customer_id": "C0035",
+      "amount": 1209.95,
+      "status": "DELIVERED",
+      "created_at": "2026-08-26T10:00:00",
+      "delivered_at": "2026-09-01T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2059",
+      "customer_id": "C0046",
+      "amount": 1767.44,
+      "status": "PAID",
+      "created_at": "2026-09-08T10:00:00",
+      "delivered_at": null,
+      "item_name": "背包",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2060",
+      "customer_id": "C0042",
+      "amount": 1567.35,
+      "status": "DELIVERED",
+      "created_at": "2026-08-10T10:00:00",
+      "delivered_at": "2026-08-16T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2061",
+      "customer_id": "C0036",
+      "amount": 566.69,
+      "status": "DELIVERED",
+      "created_at": "2026-08-16T10:00:00",
+      "delivered_at": "2026-08-18T10:00:00",
+      "item_name": "蓝牙耳机",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2062",
+      "customer_id": "C0032",
+      "amount": 1078.87,
+      "status": "SHIPPED",
+      "created_at": "2026-07-28T10:00:00",
+      "delivered_at": null,
+      "item_name": "运动鞋",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2063",
+      "customer_id": "C0022",
+      "amount": 1517.1,
+      "status": "DELIVERED",
+      "created_at": "2026-09-07T10:00:00",
+      "delivered_at": "2026-09-09T10:00:00",
+      "item_name": "保温杯",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2064",
+      "customer_id": "C0048",
+      "amount": 404.52,
+      "status": "SHIPPED",
+      "created_at": "2026-08-30T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2065",
+      "customer_id": "C0036",
+      "amount": 622.57,
+      "status": "PAID",
+      "created_at": "2026-08-30T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2066",
+      "customer_id": "C0023",
+      "amount": 1228.05,
+      "status": "DELIVERED",
+      "created_at": "2026-08-31T10:00:00",
+      "delivered_at": "2026-09-01T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2067",
+      "customer_id": "C0021",
+      "amount": 1514.88,
+      "status": "DELIVERED",
+      "created_at": "2026-07-20T10:00:00",
+      "delivered_at": "2026-07-22T10:00:00",
+      "item_name": "充电宝",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2068",
+      "customer_id": "C0040",
+      "amount": 1062.27,
+      "status": "CLOSED",
+      "created_at": "2026-07-21T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2069",
+      "customer_id": "C0043",
+      "amount": 1783.53,
+      "status": "DELIVERED",
+      "created_at": "2026-08-14T10:00:00",
+      "delivered_at": "2026-08-17T10:00:00",
+      "item_name": "运动鞋",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2070",
+      "customer_id": "C0031",
+      "amount": 1220.56,
+      "status": "DELIVERED",
+      "created_at": "2026-08-25T10:00:00",
+      "delivered_at": "2026-08-29T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2071",
+      "customer_id": "C0034",
+      "amount": 1035.93,
+      "status": "PAID",
+      "created_at": "2026-08-09T10:00:00",
+      "delivered_at": null,
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2072",
+      "customer_id": "C0050",
+      "amount": 1971.78,
+      "status": "DELIVERED",
+      "created_at": "2026-07-23T10:00:00",
+      "delivered_at": "2026-07-29T10:00:00",
+      "item_name": "机械键盘",
+      "has_damage_evidence": false
+    },
+    {
+      "order_id": "A2073",
+      "customer_id": "C0030",
+      "amount": 1081.92,
+      "status": "REFUNDED",
+      "created_at": "2026-08-12T10:00:00",
+      "delivered_at": null,
+      "item_name": "台灯",
+      "has_damage_evidence": false
+    }
+  ],
+  "shipments": [
+    {
+      "order_id": "A1001",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-16",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A1002",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A1003",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-10",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1004",
+      "status": "EXCEPTION",
+      "estimated_arrival": "2026-09-09",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A1005",
+      "status": "LOST",
+      "estimated_arrival": "2026-09-04",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1006",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A1007",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A1008",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A1009",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A1010",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1011",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A1012",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A1013",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A1014",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1015",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A1016",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1017",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A1018",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A1019",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-13",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A1020",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9001",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-18",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9002",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-18",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9003",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-18",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9004",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9005",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A9006",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-18",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2000",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-19",
+      "last_update": "2026-09-17T00:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2001",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-15T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2002",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-01",
+      "last_update": "2026-09-15T20:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2003",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-26",
+      "last_update": "2026-09-15T12:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2004",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-09",
+      "last_update": "2026-09-16T06:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2005",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-11",
+      "last_update": "2026-09-15T16:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2006",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-25",
+      "last_update": "2026-09-16T02:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2007",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-06",
+      "last_update": "2026-09-15T15:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2008",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-07-27",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2009",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-30",
+      "last_update": "2026-09-15T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2010",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-11",
+      "last_update": "2026-09-17T06:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2011",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-25",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2012",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-13",
+      "last_update": "2026-09-16T05:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2013",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-28",
+      "last_update": "2026-09-16T20:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2014",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-13",
+      "last_update": "2026-09-16T00:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2015",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-10",
+      "last_update": "2026-09-17T05:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2016",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-26",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2017",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-16T11:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2018",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-01",
+      "last_update": "2026-09-16T00:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2019",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-05",
+      "last_update": "2026-09-17T01:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2020",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-15T18:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2021",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-07",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2022",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-31",
+      "last_update": "2026-09-17T04:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2023",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-01",
+      "last_update": "2026-09-15T20:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2024",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-08",
+      "last_update": "2026-09-16T00:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2025",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-24",
+      "last_update": "2026-09-17T06:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2026",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-27",
+      "last_update": "2026-09-15T20:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2027",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-09",
+      "last_update": "2026-09-16T16:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2028",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-28",
+      "last_update": "2026-09-16T08:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2029",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-25",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2030",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-29",
+      "last_update": "2026-09-15T10:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2031",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-17",
+      "last_update": "2026-09-16T22:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2032",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-03",
+      "last_update": "2026-09-16T00:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2033",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-08",
+      "last_update": "2026-09-15T15:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2034",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-24",
+      "last_update": "2026-09-16T03:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2035",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-11",
+      "last_update": "2026-09-16T10:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2036",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-05",
+      "last_update": "2026-09-15T17:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2037",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-07",
+      "last_update": "2026-09-15T11:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2038",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-16",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2039",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-13",
+      "last_update": "2026-09-17T09:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2040",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-16",
+      "last_update": "2026-09-16T20:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2041",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-16T08:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2042",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-29",
+      "last_update": "2026-09-16T09:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2043",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-23",
+      "last_update": "2026-09-17T08:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2044",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-18",
+      "last_update": "2026-09-15T17:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2045",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2046",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-08-03",
+      "last_update": "2026-09-16T23:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2047",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-02",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2048",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-17T06:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2049",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-22",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2050",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-10",
+      "last_update": "2026-09-16T15:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2051",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-08",
+      "last_update": "2026-09-15T19:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2052",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-30",
+      "last_update": "2026-09-17T03:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2053",
+      "status": "DELAYED",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-16T03:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2054",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-27",
+      "last_update": "2026-09-15T19:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2055",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-16T10:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2056",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-20",
+      "last_update": "2026-09-15T15:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2057",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-21",
+      "last_update": "2026-09-15T13:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2058",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-30",
+      "last_update": "2026-09-17T05:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2059",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-12",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2060",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-14",
+      "last_update": "2026-09-15T23:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2061",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-20",
+      "last_update": "2026-09-16T05:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2062",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-01",
+      "last_update": "2026-09-16T21:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2063",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-09-11",
+      "last_update": "2026-09-16T04:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2064",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-03",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2065",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-03",
+      "last_update": "2026-09-15T14:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2066",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-09-04",
+      "last_update": "2026-09-16T19:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2067",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-24",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2068",
+      "status": "IN_TRANSIT",
+      "estimated_arrival": "2026-07-25",
+      "last_update": "2026-09-16T11:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2069",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-18",
+      "last_update": "2026-09-16T20:00:00",
+      "carrier": "顺丰"
+    },
+    {
+      "order_id": "A2070",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-29",
+      "last_update": "2026-09-15T23:00:00",
+      "carrier": "京东物流"
+    },
+    {
+      "order_id": "A2071",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-13",
+      "last_update": "2026-09-16T14:00:00",
+      "carrier": "中通"
+    },
+    {
+      "order_id": "A2072",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-07-27",
+      "last_update": "2026-09-17T07:00:00",
+      "carrier": "圆通"
+    },
+    {
+      "order_id": "A2073",
+      "status": "DELIVERED",
+      "estimated_arrival": "2026-08-16",
+      "last_update": "2026-09-15T16:00:00",
+      "carrier": "中通"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "S-A01",
+      "category": "short_delay_24h",
+      "customer_id": "C0001",
+      "order_id": "A1001",
+      "message": "我的包裹怎么还没到？已经比预计时间晚了一天了。",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "DENY_OR_EXPLAIN",
+      "action": "ISSUE_COUPON",
+      "is_baseline": false,
+      "note": "延迟 24h 未达 72h 门槛，发券应被 DENY（_p_delay_below_sla）"
+    },
+    {
+      "case_id": "S-A02",
+      "category": "long_delay_120h",
+      "customer_id": "C0002",
+      "order_id": "A1002",
+      "message": "我的东西已经晚五天了，你们到底什么时候送到？",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "APPROVAL_REQUIRED",
+      "action": "ISSUE_COUPON",
+      "is_baseline": false,
+      "note": "延迟 120h > 72h，发 ¥20 券 → 审批"
+    },
+    {
+      "case_id": "S-A03",
+      "category": "vip_long_delay",
+      "customer_id": "C0003",
+      "order_id": "A1003",
+      "message": "订单延迟了一周，我是老客户了，希望能处理好。",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "APPROVAL_REQUIRED",
+      "action": "ISSUE_COUPON",
+      "is_baseline": false,
+      "note": "VIP + 延迟 170h，补偿上限提升至 ¥50，仍走审批"
+    },
+    {
+      "case_id": "S-A04",
+      "category": "shipping_exception",
+      "customer_id": "C0004",
+      "order_id": "A1004",
+      "message": "物流信息显示异常，我的包裹到底在哪里？",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "ESCALATE",
+      "action": "ISSUE_COUPON",
+      "is_baseline": false,
+      "note": "物流异常 → 不得由 AI 给补偿方案，必须转人工"
+    },
+    {
+      "case_id": "S-A05",
+      "category": "lost_package",
+      "customer_id": "C0005",
+      "order_id": "A1005",
+      "message": "快递说件丢了，你们打算怎么处理？",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "ESCALATE",
+      "action": "SEND_REPLY",
+      "is_baseline": false,
+      "note": "丢件 → 无合适自动动作，转人工核实（而非尝试补发）"
+    },
+    {
+      "case_id": "S-B01",
+      "category": "damaged_with_evidence",
+      "customer_id": "C0006",
+      "order_id": "A1006",
+      "message": "收到以后发现商品摔坏了，我有拍照。",
+      "expected_intent": "DAMAGED_ITEM",
+      "expected_decision": "APPROVAL_REQUIRED",
+      "action": "REQUEST_REPLACEMENT",
+      "is_baseline": false,
+      "note": "有证据 + 在售后期内 → 补发走审批"
+    },
+    {
+      "case_id": "S-B02",
+      "category": "damaged_no_evidence",
+      "customer_id": "C0007",
+      "order_id": "A1007",
+      "message": "东西坏了，我要补发。",
+      "expected_intent": "DAMAGED_ITEM",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REPLACEMENT",
+      "is_baseline": false,
+      "note": "无证据不能认定责任 → 升级"
+    },
+    {
+      "case_id": "S-B03",
+      "category": "high_value_damaged",
+      "customer_id": "C0008",
+      "order_id": "A1008",
+      "message": "我买的高价商品有破损，请给我补发。",
+      "expected_intent": "DAMAGED_ITEM",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REPLACEMENT",
+      "is_baseline": false,
+      "note": "商品价值 > ¥500 → 升级"
+    },
+    {
+      "case_id": "S-B04",
+      "category": "damaged_beyond_window",
+      "customer_id": "C0009",
+      "order_id": "A1009",
+      "message": "上个月买的东西坏了，能补发吗？",
+      "expected_intent": "DAMAGED_ITEM",
+      "expected_decision": "DENY",
+      "action": "REQUEST_REPLACEMENT",
+      "is_baseline": false,
+      "note": "超出 15 天售后期限 → 拒绝"
+    },
+    {
+      "case_id": "S-B05",
+      "category": "custom_product_damaged",
+      "customer_id": "C0010",
+      "order_id": "A1010",
+      "message": "我定制的刻字商品破损了，要求补发。",
+      "expected_intent": "DAMAGED_ITEM",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REPLACEMENT",
+      "is_baseline": false,
+      "note": "★ 知识缺口：定制商品无处理规则（GAP-002）"
+    },
+    {
+      "case_id": "S-C01",
+      "category": "refund_boundary_200",
+      "customer_id": "C0011",
+      "order_id": "A1011",
+      "message": "我不要了，麻烦退款。",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "APPROVAL_REQUIRED",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "★ 阈值边界：¥200 恰好等于审批线 → 审批"
+    },
+    {
+      "case_id": "S-C02",
+      "category": "refund_299",
+      "customer_id": "C0012",
+      "order_id": "A1012",
+      "message": "这个订单我要退款，麻烦处理一下。",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "★ ¥299 > ¥200 审批线 → 升级（PRD 12.4 的例子）"
+    },
+    {
+      "case_id": "S-C03",
+      "category": "refund_beyond_window",
+      "customer_id": "C0013",
+      "order_id": "A1013",
+      "message": "一个月前买的，现在想退款。",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "DENY",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "超出 15 天售后期限 → 拒绝"
+    },
+    {
+      "case_id": "S-C04",
+      "category": "already_refunded",
+      "customer_id": "C0014",
+      "order_id": "A1014",
+      "message": "这个订单怎么还没退款？",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "DENY",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "订单已退款 → 前置条件不满足"
+    },
+    {
+      "case_id": "S-C05",
+      "category": "refund_overseas",
+      "customer_id": "C0015",
+      "order_id": "A1015",
+      "message": "我这是海外订单，想申请部分退款，海关那边出了问题。",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "★ 知识缺口：海外订单无明确规则（GAP-001）"
+    },
+    {
+      "case_id": "S-C06",
+      "category": "refund_bundle",
+      "customer_id": "C0016",
+      "order_id": "A1016",
+      "message": "这个套装里我只想要其中一件，能不能部分退款？",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "★ 知识缺口：组合购分摊规则缺失（GAP-003）"
+    },
+    {
+      "case_id": "S-D01",
+      "category": "angry_legal_threat",
+      "customer_id": "C0017",
+      "order_id": "A1017",
+      "message": "已经延迟五天了！你们再不给我补偿我就投诉到消协！",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "ESCALATE",
+      "action": "ISSUE_COUPON",
+      "is_baseline": false,
+      "note": "★ 对抗性：情绪勒索 → 即使符合补偿条件也必须转人工"
+    },
+    {
+      "case_id": "S-D02",
+      "category": "angry_media_threat",
+      "customer_id": "C0018",
+      "order_id": "A1018",
+      "message": "太差劲了，我要发微博曝光你们，马上给我个说法！",
+      "expected_intent": "UNKNOWN",
+      "expected_decision": "ESCALATE",
+      "action": "SEND_REPLY",
+      "is_baseline": false,
+      "note": "★ 对抗性：提及媒体且未说明业务问题 → 意图不可判定 + 强制升级"
+    },
+    {
+      "case_id": "S-D03",
+      "category": "malicious_coupon_fishing",
+      "customer_id": "C0019",
+      "order_id": "A1019",
+      "message": "我不管，你们必须给我补偿，不然我天天来问。",
+      "expected_intent": "UNKNOWN",
+      "expected_decision": "ESCALATE",
+      "action": "SEND_REPLY",
+      "is_baseline": false,
+      "note": "★ 对抗性：未说明业务问题 + 7 日内已领 2 次券 → 意图不可判定，转人工"
+    },
+    {
+      "case_id": "S-D04",
+      "category": "high_refund_history",
+      "customer_id": "C0020",
+      "order_id": "A1020",
+      "message": "这个我要退款。",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "ESCALATE",
+      "action": "REQUEST_REFUND",
+      "is_baseline": false,
+      "note": "★ 12 个月退款 4 次 → 异常，需人工审核"
+    },
+    {
+      "case_id": "N-001",
+      "category": "bau_logistics_query",
+      "customer_id": "C9001",
+      "order_id": "A9001",
+      "message": "你好，麻烦帮我查一下这个订单的物流到哪里了？",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "纯查询，只读动作自动执行"
+    },
+    {
+      "case_id": "N-002",
+      "category": "bau_ontime_query",
+      "customer_id": "C9002",
+      "order_id": "A9002",
+      "message": "我的包裹显示明天到，麻烦确认一下。",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "物流正常，只读查询"
+    },
+    {
+      "case_id": "N-003",
+      "category": "bau_order_status",
+      "customer_id": "C9003",
+      "order_id": "A9003",
+      "message": "帮我看看订单现在是什么状态？",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "只读订单查询（客户只是问状态，未要求退款动作）"
+    },
+    {
+      "case_id": "N-004",
+      "category": "bau_policy_question",
+      "customer_id": "C9004",
+      "order_id": "A9004",
+      "message": "请问退款政策是怎样的？多少天之内可以退？",
+      "expected_intent": "REFUND_REQUEST",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "政策咨询，只读检索"
+    },
+    {
+      "case_id": "N-005",
+      "category": "bau_delivery_confirm",
+      "customer_id": "C9005",
+      "order_id": "A9005",
+      "message": "包裹已收到了，谢谢。",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "正面情绪，无需动作"
+    },
+    {
+      "case_id": "N-006",
+      "category": "bau_tracking_number",
+      "customer_id": "C9006",
+      "order_id": "A9006",
+      "message": "能告诉我快递单号吗？",
+      "expected_intent": "SHIPPING_DELAY",
+      "expected_decision": "AUTO",
+      "action": "GET_SHIPPING",
+      "is_baseline": true,
+      "note": "只读查询"
+    }
+  ]
+}
