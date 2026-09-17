@@ -91,8 +91,24 @@ class TestWriteTools:
 
 
 class TestToolSchemaIsMinimal:
-    def test_schema_has_exactly_six_tools(self):
-        assert len(ToolRegistry.tool_schemas()) == 6
+    def test_schema_has_expected_tool_count(self):
+        """4 个只读工具（含知识检索）+ 3 个写工具 = 7。
+
+        ★ 数量本身就是设计约束：每多一个工具，
+          Agent 的越权面就多一分，prompt 也更容易选错。
+        """
+        schemas = ToolRegistry.tool_schemas()
+        assert len(schemas) == 7
+        names = {t["function"]["name"] for t in schemas}
+        assert names == {
+            "get_customer",
+            "get_order",
+            "get_shipping",
+            "search_knowledge",
+            "issue_coupon",
+            "request_refund",
+            "request_replacement",
+        }
 
     def test_schema_excludes_dangerous_capabilities(self):
         """★ 最外层能力收口：LLM 看不到的工具，它就无法调用。"""

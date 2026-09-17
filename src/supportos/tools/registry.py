@@ -67,6 +67,10 @@ class ToolRegistry:
             self._orders[o["order_id"]] = Order(**o)
         for s in raw["shipments"]:
             self._shipments[s["order_id"]] = Shipment(**s)
+        # 政策知识库（结构化匹配，非向量检索）
+        from supportos.tools.knowledge import KnowledgeBase
+
+        self.knowledge = KnowledgeBase()
 
     # ========================================================
     # Read Tools（GREEN，低风险）
@@ -112,6 +116,40 @@ class ToolRegistry:
             raise ToolError(f"订单 {order_id} 没有物流记录")
         self._log("get_shipping", {"order_id": order_id}, True, s)
         return s
+
+    def search_knowledge(self, query: str, intent: str | None = None) -> dict:
+        """检索客服政策。结构化匹配，非向量检索。
+
+        ★ 返回值包含 policy_id / version / section —— 可审计。
+          同时会返回 knowledge_gap：政策「存在」不等于「够用」。
+        """
+        from supportos.domain.enums import Intent as _Intent
+
+        parsed: _Intent | None = None
+        if intent:
+            try:
+                parsed = _Intent(str(intent).strip().upper())
+            except ValueError:
+                parsed = None
+
+        result = self.knowledge.search(parsed, query)
+        payload = {
+            "policy_ids": result.policy_ids,
+            "sections": [
+                {
+                    "cite": s.cite(),
+                    "condition": s.condition,
+                    "action": s.action,
+                    "params": s.params,
+                    "text": s.text,
+                }
+                for s in result.sections
+            ],
+            "knowledge_gap": result.gap.value,
+            "gap_detail": result.gap_detail,
+        }
+        self._log("search_knowledge", {"query": query, "intent": intent}, True, payload)
+        return payload
 
     # ========================================================
     # Write Tools（必须经 Policy Engine 裁决后才可调用）
@@ -238,6 +276,34 @@ class ToolRegistry:
                         "type": "object",
                         "properties": {"order_id": {"type": "string"}},
                         "required": ["order_id"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": ActionType.SEARCH_KNOWLEDGE.value,
+                    "description": (
+                        "检索客服政策知识库。返回命中的政策条款（含政策编号与章节）"
+                        "以及 knowledge_gap 标记。若 knowledge_gap 不为 NONE，"
+                        "表示现有政策未覆盖该情况，不得套用通用政策。"
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string", "description": "客户问题的关键描述"},
+                            "intent": {
+                                "type": "string",
+                                "description": "意图标签，可选",
+                                "enum": [
+                                    "SHIPPING_DELAY",
+                                    "DAMAGED_ITEM",
+                                    "REFUND_REQUEST",
+                                    "UNKNOWN",
+                                ],
+                            },
+                        },
+                        "required": ["query"],
                     },
                 },
             },

@@ -138,11 +138,14 @@ class TriageAgent:
         宁可判不出意图（UNKNOWN → 升级人工），也不要猜错。
         """
         m = message or ""
+        # ★ 判定顺序很重要：退款类优先于物流类。
+        #   客户说「这个订单怎么还没退款」既含"订单"也含"退款"，
+        #   按错误顺序会归成物流咨询。
         if any(k in m for k in ("退款", "退钱", "退货", "取消订单")):
             intent = Intent.REFUND_REQUEST
         elif any(k in m for k in ("破损", "坏了", "损坏", "碎了", "补发")):
             intent = Intent.DAMAGED_ITEM
-        elif any(k in m for k in ("物流", "快递", "没到", "延迟", "发货", "包裹")):
+        elif any(k in m for k in ("物流", "快递", "没到", "延迟", "发货", "包裹", "单号", "什么时候到")):
             intent = Intent.SHIPPING_DELAY
         else:
             intent = Intent.UNKNOWN

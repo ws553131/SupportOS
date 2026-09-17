@@ -127,6 +127,49 @@ class LLMClient:
 
         return LLMResult(text=text, usage=usage, raw=resp)
 
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict],
+        *,
+        temperature: float = 0.0,
+        max_tokens: int = 1024,
+        model: str | None = None,
+        tool_choice: str = "auto",
+    ):
+        """带 Function Calling 的补全。
+
+        返回原始 response 对象 —— 因为调用方需要读取 tool_calls 结构，
+        而这部分不适合抽象成统一的文本结果。
+        """
+        kwargs: dict[str, Any] = {
+            "model": model or self.settings.llm.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = tool_choice
+
+        t0 = time.perf_counter()
+        try:
+            resp = self._client.chat.completions.create(**kwargs)
+        except Exception as e:  # noqa: BLE001
+            raise LLMError(f"LLM 工具调用失败：{type(e).__name__}: {e}") from e
+        latency = (time.perf_counter() - t0) * 1000
+
+        u = getattr(resp, "usage", None)
+        self.calls += 1
+        self.total_usage = LLMUsage(
+            prompt_tokens=self.total_usage.prompt_tokens + (getattr(u, "prompt_tokens", 0) or 0),
+            completion_tokens=self.total_usage.completion_tokens
+            + (getattr(u, "completion_tokens", 0) or 0),
+            total_tokens=self.total_usage.total_tokens + (getattr(u, "total_tokens", 0) or 0),
+            latency_ms=self.total_usage.latency_ms + latency,
+        )
+        return resp
+
     def summary(self) -> dict:
         return {
             "calls": self.calls,
