@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supportos"
+version = "0.1.0"
+description = "AI 原生客服运营后台：在权限与风险规则约束下安全执行客服业务动作"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "openai>=1.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+web = ["fastapi", "uvicorn", "jinja2"]
+dev = ["pytest", "pytest-cov"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

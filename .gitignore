@@ -1,0 +1,34 @@
+# ---- 密钥与环境变量：绝不能提交 ----
+.env
+.env.local
+.env.*.local
+*.key
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- 数据与产物 ----
+# 注意：data/mock 和 data/policies 是要提交的（作品集资产）
+data/supportos.db
+data/*.db
+data/evals/results/
+*.sqlite3
+
+# ---- 日志与临时文件 ----
+*.log
+logs/
+tmp/
+.~*
+
+# ---- IDE ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
