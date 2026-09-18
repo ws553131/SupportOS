@@ -506,3 +506,81 @@ LLM 模式跑出 2 个**误报**：
   安全只能依赖信号词匹配 —— 这是已知脆弱点，也是 LLM 版本表现更好的原因。
 - 新增的信号词（施压话术、身份伪造、模糊诉求）是**黑名单式**防御，
   本质上是打地鼠。更稳健的方向是把 Triage 换成更强的分类模型，而非继续加词。
+
+---
+
+## W5 审批流闭环演示
+
+`approve_and_execute`（含**审批后重新校验**）此前有代码、有单元测试，
+但从未在端到端流程里被真正跑过 —— 它只是一个「未被演示的声明」。
+本轮把它跑通并固化为演示脚本。
+
+```powershell
+python scripts\approval_demo.py            # 真实 LLM
+python scripts\approval_demo.py --no-llm   # 确定性
+```
+
+### 为什么这个机制重要
+
+主管可能在**数小时后**才批复。而在这几小时里：
+
+- 订单可能已被财务渠道直接退款
+- 客户可能又从别的客服那里领到了券
+- 物流可能已从异常恢复
+
+**「批准时成立」不等于「执行时成立」。**
+
+如果只在审批时校验一次，就会产生一类极难发现的资金风险：
+主管基于当时正确的信息批准了退款，执行时订单其实已经退过 ——
+**同一笔订单会被退两次。**
+
+### 四个场景（LLM 与确定性模式均 5/5 通过）
+
+| 场景 | 工单状态 | 是否执行 | 结果 |
+|---|---|---|---|
+| 审批通过 + 重新校验通过 | RESOLVED | 是 | OK |
+| 审批通过但订单已被其他渠道退款 | ESCALATED | **否** | OK |
+| 审批通过但客户又领了券 | ESCALATED | **否** | OK |
+| 主管驳回 | ESCALATED | 否 | OK |
+| 获批执行的安全判定 | RESOLVED | 是 | 安全 |
+
+**场景 2 的完整审计链**（节选自实际输出）：
+
+```
+TriageAgent    classify_intent
+SupportAgent   gather_context
+ActionPlanner  propose_action
+RuleEngine     compute_amount [REFUND_POLICY_V4 §4.2]
+PolicyEngine   evaluate_action [APPROVAL_REQUIRED]
+System         await_approval          ← 等待人工审批，Agent 未执行任何写操作
+   ... 期间订单被外部渠道退款 ...
+PolicyEngine   revalidate_after_approval [REVALIDATE_FAILED] ← supervisor_zhang
+```
+
+执行被中止，且**退款请求数为 0**（断言过）。
+
+### 本轮发现并修复的 2 个流程缺陷
+
+| # | 缺陷 | 影响 |
+|---|---|---|
+| 1 | **执行成功后工单停在 `EXECUTING`** | 工单永远不关闭，主管看到的是一张「卡在执行中」的单子 |
+| 2 | **回复内容与实际状态矛盾** | 只处理 AUTO 分支，导致「已批准且券已发放」的工单仍回复「需要专员核实」，客户会以为事情还没办 |
+
+第 2 个是演示时才暴露的 —— 单测只断言了「动作执行了」，
+没有断言「回复说对了」。**这正是「跑一遍完整流程」不可替代的价值。**
+
+### 设计要点
+
+- **驳回 ≠ 关闭**：驳回后转升级而非关闭。客户的问题仍需有人答复，
+  直接关单会让客户投诉无门，反而制造更大的问题。
+- **重新校验的两个必要输入**：审批时的上下文**快照**（`TicketOutcome.context`）
+  与执行时刻的**最新读取**（`refresh_context()`）。
+  只存快照不重读，就永远发现不了变化；只重读没有快照，就无从比较。
+- **模拟外部变更的方法**（`simulate_external_refund` 等）刻意做成显式接口：
+  否则重新校验永远通过，这个机制就成了一行永远不会执行的代码。
+
+### 当前规模
+
+- 测试：**171 个**（新增 `tests/test_approval_flow.py` 12 个）
+- 演示脚本：`demo.py` / `ablation.py` / `integration_check.py` / `approval_demo.py`
+- 案例集：64 条（20 边缘 + 24 基线 + 20 对抗性绕过）

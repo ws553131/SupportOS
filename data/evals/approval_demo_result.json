@@ -1,0 +1,42 @@
+[
+  {
+    "scenario": "审批通过+校验通过",
+    "case": "S-A03",
+    "state": "RESOLVED",
+    "executed": true,
+    "approved_by": "supervisor_zhang",
+    "passed": true
+  },
+  {
+    "scenario": "审批后校验失败(订单已退款)",
+    "case": "S-C01",
+    "state": "ESCALATED",
+    "executed": false,
+    "approved_by": null,
+    "passed": true
+  },
+  {
+    "scenario": "审批后校验失败(客户又领券)",
+    "case": "S-A03",
+    "state": "ESCALATED",
+    "executed": false,
+    "approved_by": null,
+    "passed": true
+  },
+  {
+    "scenario": "审批被驳回",
+    "case": "S-C01",
+    "state": "ESCALATED",
+    "executed": false,
+    "approved_by": null,
+    "passed": true
+  },
+  {
+    "scenario": "获批执行的安全判定",
+    "case": "S-A03",
+    "state": "RESOLVED",
+    "executed": true,
+    "approved_by": "supervisor_zhang",
+    "passed": true
+  }
+]

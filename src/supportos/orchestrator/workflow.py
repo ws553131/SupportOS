@@ -79,6 +79,13 @@ class TicketOutcome:
     approved_by: str | None = None
     """人工批准者。安全判定需要它来区分「越权执行」与「获批执行」。"""
 
+    context: CaseContext | None = None
+    """处理时的业务上下文快照。
+
+    ★ 它是「审批后重新校验」的基准：审批人可能在数小时后才批复，
+      届时需要用当时的快照与新读到的数据做对比。若不保存基准，
+      就无法判断「上下文是否发生了变化」。"""
+
     audit: AuditLog | None = None
     error: str = ""
 
@@ -208,6 +215,8 @@ class TicketOrchestrator:
         ctx = self.build_context(
             ticket_id, message, customer_id, order_id, triage, gathered
         )
+        # 保存快照 —— 供审批后重新校验作为「审批时的基准」
+        out.context = ctx
 
         # --- 4. Action Planner 选动作 ---
         sm.transition(TicketState.PLANNING, "开始规划动作", now=self.now)
@@ -331,21 +340,74 @@ class TicketOrchestrator:
     # 审批（人工介入后）
     # ========================================================
 
+    def refresh_context(self, outcome: TicketOutcome) -> CaseContext | None:
+        """重新读取业务数据，构造「当前」上下文。
+
+        ★ 这是审批后重新校验的另一半：光是保存了审批时的快照还不够，
+          还需要一个能反映**此刻真实状态**的上下文来对比。
+          若期间订单被别的渠道退款、客户又领了一次券，这里就会读到变化。
+        """
+        before = outcome.context
+        if before is None:
+            return None
+        try:
+            customer = self.registry.get_customer(before.customer.customer_id)
+        except ToolError:
+            customer = before.customer
+
+        order = None
+        shipment = None
+        if before.order is not None:
+            try:
+                order = self.registry.get_order(
+                    before.order.order_id,
+                    requester_customer_id=before.customer.customer_id,
+                )
+            except ToolError:
+                order = before.order  # 读不到就沿用旧值，不假装它变了
+            try:
+                shipment = self.registry.get_shipping(
+                    before.order.order_id,
+                    requester_customer_id=before.customer.customer_id,
+                )
+            except ToolError:
+                shipment = before.shipment
+
+        return before.model_copy(
+            update={
+                "customer": customer,
+                "order": order,
+                "shipment": shipment,
+                "now": self.now,
+            }
+        )
+
     def approve_and_execute(
         self,
         outcome: TicketOutcome,
         approver: str,
-        ctx_before: CaseContext,
-        ctx_now: CaseContext,
+        ctx_now: CaseContext | None = None,
     ) -> TicketOutcome:
         """审批通过后执行。
 
         ★ 已确认的产品决策：审批后必须**重新校验**。
           主管可能在几小时后才批准，期间订单状态、物流、客户历史都可能变化。
+          「批准时成立」不等于「执行时成立」。
+
+        Args:
+            ctx_now: 执行时刻的上下文。为 None 时自动从业务系统重新读取
+                     （见 refresh_context）—— 这是更贴近生产的用法。
         """
         if outcome.decision is None or outcome.action_taken is None:
             outcome.error = "无可执行的动作"
             return outcome
+        if outcome.context is None:
+            outcome.error = "缺少审批时的上下文快照，无法重新校验"
+            return outcome
+
+        ctx_before = outcome.context
+        ctx_now = ctx_now or self.refresh_context(outcome) or ctx_before
+
         assert outcome.audit is not None
         audit = outcome.audit
         sm = TicketStateMachine(ticket_id=outcome.ticket_id, state=outcome.state)
@@ -379,6 +441,15 @@ class TicketOrchestrator:
         outcome.state = sm.state
         outcome.approved_by = approver
         self._execute(action, outcome, sm, audit, ctx_now, authorized_user=approver)
+
+        # ★ 执行成功后必须把工单推进到终态。
+        #   实测发现的流程缺陷：原先执行完就停在了 EXECUTING，
+        #   工单永远不关闭 —— 主管看到的是一张「卡在执行中」的单子。
+        #   执行失败时 _execute 内部已将其升级，此处不再流转。
+        if outcome.executed and sm.state is TicketState.EXECUTING:
+            sm.resolve("审批后执行完成", now=self.now)
+            outcome.state = sm.state
+
         outcome.reply = self._generate_reply(
             outcome, ctx_now, outcome.decision, audit, approved=True
         )
@@ -759,11 +830,27 @@ class TicketOrchestrator:
     def _deterministic_reply(
         out: TicketOutcome, decision: PolicyDecision, approved_facts: str
     ) -> str:
-        if decision.decision is Decision.AUTO and out.executed:
+        # ★ 已执行就应当告诉客户结果，无论它是 AUTO 执行还是获批执行。
+        #   实测发现的缺陷：原先只处理 AUTO 分支，导致「主管已批准且券已发放」
+        #   的工单仍然回复「需要专员进一步核实」——
+        #   回复内容与实际状态矛盾，客户会以为事情还没办。
+        if out.executed:
             amount = out.action_params.get("amount")
-            if amount:
-                return f"您好，已为您处理，补偿 ¥{amount:g} 已发放，请注意查收。"
-            return "您好，已为您查询并处理完毕，如有其他问题请随时联系我们。"
+            action = out.action_taken
+            if action is ActionType.ISSUE_COUPON and amount:
+                return f"您好，已为您处理，¥{amount:g} 优惠券已发放，请注意查收。"
+            if action is ActionType.REQUEST_REFUND and amount:
+                return f"您好，退款申请 ¥{amount:g} 已提交，将尽快为您处理。"
+            if action is ActionType.REQUEST_REPLACEMENT:
+                return "您好，补发申请已提交，我们会尽快为您安排寄出。"
+            if action in (
+                ActionType.GET_CUSTOMER,
+                ActionType.GET_ORDER,
+                ActionType.GET_SHIPPING,
+                ActionType.SEARCH_KNOWLEDGE,
+            ):
+                return "您好，已为您查询完毕，如有其他问题请随时联系我们。"
+            return "您好，已为您处理完毕，如有其他问题请随时联系我们。"
         return "您好，您的问题需要专员进一步核实，我们会尽快与您联系，感谢您的耐心等待。"
 
 

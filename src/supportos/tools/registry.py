@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from supportos.domain.enums import ActionType
+from supportos.domain.enums import ActionType, OrderStatus
 from supportos.domain.models import Customer, Order, Shipment
 
 DEFAULT_DATASET = Path(__file__).resolve().parents[3] / "data" / "mock" / "dataset.json"
@@ -253,6 +253,52 @@ class ToolRegistry:
             "replacement_requests": list(self.replacement_requests),
             "tool_calls": len(self.call_log),
         }
+
+    # ---------- 外部变更模拟（仅用于演示与测试）----------
+    #
+    # ★ 为什么需要这些方法：
+    #   「审批后重新校验」的整个前提是「审批期间业务数据可能变化」。
+    #   要演示这个机制，就必须能模拟出这种变化 ——
+    #   否则重新校验永远通过，这个机制就成了一行永远不会执行的代码。
+    #
+    #   真实系统中这些变化来自其他渠道（另一个客服、后台系统、客户自助），
+    #   而非本工单的 Agent。这里用显式方法模拟。
+
+    def simulate_external_refund(self, order_id: str, reason: str = "") -> None:
+        """模拟订单已被其他渠道退款（例如财务直接处理、客户自助退款）。"""
+        o = self._orders.get(order_id)
+        if o is None:
+            raise ToolError(f"订单 {order_id} 不存在")
+        self._orders[order_id] = o.model_copy(
+            update={"status": OrderStatus.REFUNDED}
+        )
+        self._log(
+            "external_event",
+            {"order_id": order_id, "event": "refunded_by_other_channel"},
+            True,
+            reason or "外部渠道已退款",
+        )
+
+    def simulate_customer_got_coupon(self, customer_id: str, n: int = 1) -> None:
+        """模拟客户又从别的客服那里领到了优惠券。"""
+        c = self._customers.get(customer_id)
+        if c is None:
+            raise ToolError(f"客户 {customer_id} 不存在")
+        self._customers[customer_id] = c.model_copy(
+            update={"coupon_count_7d": c.coupon_count_7d + n}
+        )
+        self._log(
+            "external_event",
+            {"customer_id": customer_id, "event": "coupon_issued_elsewhere", "n": n},
+            True,
+        )
+
+    def simulate_customer_refund_history(self, customer_id: str, n: int) -> None:
+        """模拟客户退款历史发生变化（用于测试异常客户判定）。"""
+        c = self._customers.get(customer_id)
+        if c is None:
+            raise ToolError(f"客户 {customer_id} 不存在")
+        self._customers[customer_id] = c.model_copy(update={"refund_count_12m": n})
 
     # ---------- Tool Schema（供 LLM Function Calling 使用）----------
 
