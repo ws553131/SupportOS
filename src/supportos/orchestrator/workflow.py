@@ -117,6 +117,9 @@ class TicketOrchestrator:
         llm: LLMClient | None = None,
         use_llm: bool = True,
         now: datetime | None = None,
+        engine_factory=None,
+        enforce_resolve_blocker: bool = True,
+        variant: str = "v2",
     ):
         self.registry = registry
         self.requester_id = requester_id
@@ -124,6 +127,24 @@ class TicketOrchestrator:
         self.use_llm = use_llm
         self._llm = llm
         self.now = now or datetime(2026, 9, 17, 10, 0, 0)
+        # ★ 可插拔引擎：用于消融实验（见 evals/variants.py）。
+        #   默认使用完整的 Policy Engine。
+        self._engine_factory = engine_factory or (
+            lambda meta: PolicyEngine(meta=meta)
+        )
+        # ★ 是否启用「不得自动结案」守卫。
+        #   纯 LLM 基线（V0）关闭它 —— 那个版本本就没有治理层。
+        self.enforce_resolve_blocker = enforce_resolve_blocker
+        self.variant = variant
+
+    def _make_engine(self):
+        return self._engine_factory(
+            CaseMeta(
+                requester_id=self.requester_id,
+                requester_role=self.requester_role,
+                now=self.now,
+            )
+        )
 
     @property
     def llm(self) -> LLMClient:
@@ -235,14 +256,8 @@ class TicketOrchestrator:
         )
         out.action_taken = proposal.action
 
-        # --- 6. Policy Engine 裁决 ---
-        engine = PolicyEngine(
-            meta=CaseMeta(
-                requester_id=self.requester_id,
-                requester_role=self.requester_role,
-                now=self.now,
-            )
-        )
+        # --- 6. 策略裁决（引擎可插拔，供消融实验替换）---
+        engine = self._make_engine()
         decision = engine.evaluate(action, ctx)
         out.decision = decision
         audit.record(
@@ -340,13 +355,7 @@ class TicketOrchestrator:
             params=outcome.action_params,
             proposed_by="ActionPlanner",
         )
-        engine = PolicyEngine(
-            meta=CaseMeta(
-                requester_id=self.requester_id,
-                requester_role=self.requester_role,
-                now=self.now,
-            )
-        )
+        engine = self._make_engine()
         revalidated = engine.revalidate(action, ctx_before, ctx_now)
         audit.record(
             "PolicyEngine",
@@ -449,6 +458,39 @@ class TicketOrchestrator:
         gathered = out.gathered
         reads = gathered.executed_reads if gathered else []
 
+        # ★ 守卫可被关闭：纯 LLM 基线（V0）本就没有治理层，
+        #   它的产品形态就是「LLM 不提案即结案」。
+        #   保留这个开关，消融实验才能真实反映各版本的能力差异，
+        #   否则等于给基线版本偷偷装上了守卫。
+        if not self.enforce_resolve_blocker:
+            if reads:
+                out.action_taken = ActionType(gathered.primary_read or "search_knowledge")
+                out.executed = True
+                sm.transition(
+                    TicketState.EXECUTING, "执行只读查询", actor="PolicyEngine",
+                    now=self.now,
+                )
+                sm.resolve("查询类工单已完成", now=self.now)
+                out.state = sm.state
+                audit.record(
+                    "SupportAgent",
+                    out.action_taken.value,
+                    {"reads": reads},
+                    result=f"查询类工单，已完成只读查询：{', '.join(reads)}",
+                )
+                out.reply = self._generate_reply(
+                    out, ctx,
+                    PolicyDecision(decision=Decision.AUTO, reason="查询类工单"), audit,
+                )
+                return out
+            sm.escalate(f"Agent 未提出动作：{reason}", now=self.now)
+            out.state = sm.state
+            out.executed = False
+            audit.record("System", "no_action_escalate", {"reason": reason},
+                         result="Agent 未提出动作，转人工处理")
+            out.reply = "您好，您的问题需要专员进一步核实，我们会尽快与您联系。"
+            return out
+
         # ★ 安全红线一：意图不可判定时，即使查到了信息也不得自动结案。
         intent_unknown = out.triage is not None and out.triage.intent is Intent.UNKNOWN
 
@@ -506,9 +548,7 @@ class TicketOrchestrator:
         复用 Policy Engine 的信号检查方法，保证两处判断口径一致
         （而不是复制一份逻辑，那样迟早会分叉）。
         """
-        engine = PolicyEngine(
-            meta=CaseMeta(requester_id=self.requester_id, requester_role=self.requester_role)
-        )
+        engine = self._make_engine()
         # 1. 情境性硬信号（丢件、物流异常、严重 SLA 违约 + VIP）
         hard = engine._check_case_risk_signals(ctx)  # noqa: SLF001
         if hard:
