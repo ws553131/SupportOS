@@ -47,7 +47,45 @@ from supportos.tools.registry import ToolRegistry  # noqa: E402
 DATA = json.loads((ROOT / "data" / "mock" / "dataset.json").read_text(encoding="utf-8"))
 
 
-def run_variant(key: str, use_llm: bool, llm: LLMClient | None) -> list[CaseRun]:
+def inject_drift(reg: ToolRegistry, out, case: dict) -> str:
+    """在「审批期间」注入业务数据变化。
+
+    ★ 为什么必须注入漂移：
+      「审批后重新校验」的整个前提是「审批期间数据可能变化」。
+      若不注入，重新校验永远通过，这个机制就成了一行永远不会执行的代码 ——
+      消融实验也就测不出它的贡献。
+
+      漂移内容按动作类型选择，模拟真实世界中最常见的两类并发事件：
+        - 退款类：订单已被其他渠道（财务/客户自助）退款
+        - 发券类：客户又从别的客服那里领到了券
+    """
+    from supportos.domain.enums import ActionType
+
+    action = out.action_taken
+    oid = case["order_id"]
+    cid = case["customer_id"]
+
+    if action is ActionType.REQUEST_REFUND:
+        if reg._orders.get(oid) is not None:  # noqa: SLF001
+            reg.simulate_external_refund(oid, "审批期间财务渠道已处理退款")
+            return "订单已被其他渠道退款"
+    if action is ActionType.ISSUE_COUPON:
+        reg.simulate_customer_got_coupon(cid, 2)
+        return "客户在别处又领到 2 张券"
+    if action is ActionType.REQUEST_REPLACEMENT:
+        if reg._orders.get(oid) is not None:  # noqa: SLF001
+            reg.simulate_external_refund(oid, "审批期间订单已被处理")
+            return "订单已被其他渠道处理"
+    return ""
+
+
+def run_variant(
+    key: str,
+    use_llm: bool,
+    llm: LLMClient | None,
+    simulate_approval: bool = False,
+    inject_context_drift: bool = False,
+) -> list[CaseRun]:
     variant = VARIANTS[key]
     runs: list[CaseRun] = []
 
@@ -63,13 +101,23 @@ def run_variant(key: str, use_llm: bool, llm: LLMClient | None) -> list[CaseRun]
         )
 
         t0 = time.perf_counter()
-        calls_before = llm.calls if llm else 0
         pt_before = llm.total_usage.prompt_tokens if llm else 0
         ct_before = llm.total_usage.completion_tokens if llm else 0
 
         out = orch.handle(
             f"T-{c['case_id']}", c["message"], c["customer_id"], c["order_id"]
         )
+
+        # ---------- 审批模拟（消融实验的关键补充）----------
+        approval_simulated = False
+        drift = ""
+        aborted = False
+        if simulate_approval and out.state.value == "WAITING_APPROVAL":
+            approval_simulated = True
+            if inject_context_drift:
+                drift = inject_drift(reg, out, c)
+            out = orch.approve_and_execute(out, "supervisor_zhang")
+            aborted = approval_simulated and not out.executed
 
         latency = (time.perf_counter() - t0) * 1000
         assessment = assess_outcome(
@@ -119,6 +167,9 @@ def run_variant(key: str, use_llm: bool, llm: LLMClient | None) -> list[CaseRun]
                     for v in assessment.violations
                 ],
                 is_safe=assessment.is_safe,
+                approval_simulated=approval_simulated,
+                context_drift=drift,
+                aborted_after_approval=aborted,
             )
         )
     return runs
@@ -128,6 +179,16 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-llm", action="store_true", help="确定性模式，不调用 LLM")
     ap.add_argument("--variants", default="v0,v1,v2", help="要对比的变体，逗号分隔")
+    ap.add_argument(
+        "--simulate-approval",
+        action="store_true",
+        help="对进入待审批的工单模拟主管批准（否则 V2 的审批类工单永远停在待审批）",
+    )
+    ap.add_argument(
+        "--drift",
+        action="store_true",
+        help="审批期间注入业务数据变化，用于测量「审批后重新校验」的贡献",
+    )
     args = ap.parse_args()
 
     use_llm = not args.no_llm
@@ -148,7 +209,13 @@ def main() -> int:
 
     for k in keys:
         print(f"运行变体 {VARIANTS[k].name} ...")
-        runs = run_variant(k, use_llm, llm)
+        runs = run_variant(
+            k,
+            use_llm,
+            llm,
+            simulate_approval=args.simulate_approval,
+            inject_context_drift=args.drift,
+        )
         all_runs[k] = runs
         all_metrics[k] = compute_metrics(runs)
 
@@ -159,7 +226,7 @@ def main() -> int:
     print("=" * 96)
     print(compare_table({VARIANTS[k].name: all_metrics[k] for k in keys}))
     print()
-    print("※ 所有比率的分母均为 46 个案例。")
+    print(f"※ 所有比率的分母均为 {len(DATA['cases'])} 个案例。")
     print("※ 「未受门禁执行率」是跨版本可比的核心安全指标：")
     print("   它基于「该案例本应有人参与，但机器自己执行了写操作」判定，")
     print("   而不是基于「引擎裁决是否为 AUTO」—— 否则 V0 因为根本没有引擎，")
@@ -220,6 +287,61 @@ def main() -> int:
         print("=" * 96)
         for vec, n in sorted(vectors.items(), key=lambda kv: -kv[1]):
             print(f"  {vec:<30} {n} 次")
+
+    # ---------- 审批流专项对比 ----------
+    #   ★ 这一节单独成段，因为「审批 Gate + 重新校验」的贡献
+    #     在大表里会被平均掉：它只作用于少数审批类案例。
+    #   ★ 分母口径很关键：不能直接用「期望 APPROVAL_REQUIRED 的案例」——
+    #     在 V0/V1 里有些案例的 Planner 根本不提案（直接结案），
+    #     把它们算进来会让基线看起来比实际克制。
+    #     正确做法：取**完整系统真正进入待审批状态**的那批案例，
+    #     再看各变体在同一批案例上的行为，这才是同口径对比。
+    reference_key = keys[-1]
+    simulated = [r for r in all_runs[reference_key] if r.approval_simulated]
+    gated_cases = (
+        [r.case_id for r in simulated]
+        if simulated
+        else [
+            c["case_id"]
+            for c in DATA["cases"]
+            if c["expected_decision"] == "APPROVAL_REQUIRED"
+        ]
+    )
+    if gated_cases:
+        print()
+        print("=" * 96)
+        print("审批流专项：同一批「确实需要人工审批」的案例，各变体的处置")
+        print("=" * 96)
+        print(f"  案例集合（{len(gated_cases)} 条）：{'、'.join(gated_cases)}")
+        if simulated:
+            print(f"  选取依据：{VARIANTS[reference_key].name} 实际进入待审批状态的案例")
+        print()
+        print(f"  {'变体':<28}{'执行了写操作':<16}{'审批后中止':<14}{'注入的上下文变化'}")
+        print("-" * 96)
+        for k in keys:
+            rs = [r for r in all_runs[k] if r.case_id in gated_cases]
+            execd = sum(1 for r in rs if r.executed_write)
+            aborted = sum(1 for r in rs if r.aborted_after_approval)
+            drifts = {r.context_drift for r in rs if r.context_drift}
+            print(
+                f"  {VARIANTS[k].name:<28}"
+                f"{f'{execd}/{len(rs)}':<16}"
+                f"{f'{aborted}/{len(rs)}':<14}"
+                f"{('；'.join(sorted(drifts)) if drifts else '—')[:34]}"
+            )
+        print()
+        print("  ★ 对比要点：")
+        print("     · 这批案例都符合业务的补偿/退款条件，但都需要人工批准。")
+        print("     · V0/V1 没有人工环节，在审批本应发生之前就已经执行了写操作。")
+        print("     · V2 把执行推迟到人工批准之后，并在执行前**重新校验**；")
+        print("       若审批期间订单已被其他渠道退款、或客户已从别处领过券，")
+        print("       则中止执行 —— 杜绝重复退款与重复补偿。")
+        print()
+        print("     这个贡献无法被 Policy Engine 替代：")
+        print("     变化发生在裁决**之后**，只有在执行前再校验一次才拦得住。")
+        if not args.simulate_approval:
+            print()
+            print("  ※ 提示：加 --simulate-approval --drift 可完整演示该机制。")
 
     # ---------- 落盘 ----------
     out_dir = ROOT / "data" / "evals"

@@ -32,3 +32,6 @@ tmp/
 .idea/
 *.swp
 .DS_Store
+
+# ---- 外部公开数据集（不重新分发，用 scripts/fetch_external_data.py 获取）----
+data/external/
