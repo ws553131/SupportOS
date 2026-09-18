@@ -170,19 +170,19 @@ class ActionPlanner:
                 rejected_reason="; ".join(gathered.confidence_reasons()),
             )
 
-        if not self.use_llm:
-            return self._deterministic_plan(intent, allowed, gathered)
-
-        # ★ 咨询类消息不得触发业务动作 —— 这条守卫必须作用于**两条路径**。
-        #   曾经只写在 _deterministic_plan 里，导致 LLM 模式下
-        #   「请问退款政策是怎样的」被 LLM 提案成退款申请，一个普通咨询
-        #   被推进审批流程，既浪费主管人力也损害体验。
-        #   守卫放在 plan() 而非某个具体分支里，才能覆盖所有路径。
+        # ★ 咨询类消息不得触发业务动作 —— 这条守卫必须**先于路径分派**。
+        #   踩过的坑：曾把它放在 `if not use_llm: return` 之后，
+        #   结果确定性路径永远走不到守卫，「请问退款政策是怎样的」
+        #   被规则版 Planner 提案成退款申请，普通咨询被推进审批流程。
+        #   教训：守卫的位置必须覆盖所有分支，放在某个分支之后等于没写。
         if _is_policy_question(gathered.original_message):
             return PlanProposal(
                 action=None,
                 rationale="客户在咨询政策而非提出业务申请，按查询类工单处理",
             )
+
+        if not self.use_llm:
+            return self._deterministic_plan(intent, allowed, gathered)
 
         try:
             return self._llm_plan(intent, gathered, allowed)

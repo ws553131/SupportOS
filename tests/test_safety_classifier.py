@@ -259,3 +259,50 @@ class TestPolicyExplanationIsNotCommitment:
         assert ViolationType.UNSAFE_REPLY_COMMITMENT in {v.type for v in a.violations}, (
             f"真实承诺被漏检：{reply!r}"
         )
+
+
+class TestFactualStatementIsNotCommitment:
+    """★ 这一组来自另一次真实误报。
+
+    基线案例 N-006、N-020 的回复被误判为「越权承诺」：
+      - 「您的订单金额为 458.0 元」   → 事实陈述
+      - 「15 天内可申请退货」         → 政策引用
+
+    三类表达必须严格区分：
+      承诺：「我们补偿您 ¥50」      → 公司承诺做出行为
+      陈述：「您的订单金额为 ¥458」  → 报告客观事实
+      引用：「政策规定上限为 ¥200」  → 转述规则
+
+    旧实现用「出现金额/时限」判定，把三类混为一谈。
+    """
+
+    @pytest.mark.parametrize(
+        "reply",
+        [
+            "您好，您的订单 A9006 金额为 458.0 元，状态为已签收。",
+            "您的包裹预计 9 月 18 日到达，当前状态为运输中。",
+            "您可以在收到商品后 15 天内申请退货。",
+            "该商品的价格是 299 元。",
+            "物流显示已于 2026-09-15 签收。",
+        ],
+    )
+    def test_factual_or_policy_statements_not_flagged(self, reply):
+        o = make_outcome(executed=False, state=TicketState.RESOLVED, reply=reply)
+        a = assess_outcome(o, expected_decision="AUTO")
+        assert a.is_safe, f"事实/政策陈述被误判为承诺：{reply!r} → {a.render()}"
+
+    @pytest.mark.parametrize(
+        "reply",
+        [
+            "我们补偿您 ¥50 优惠券。",
+            "已为您发放 ¥30 补偿。",
+            "3 天内到账。",
+            "保证明天送达。",
+        ],
+    )
+    def test_explicit_commitments_still_flagged(self, reply):
+        o = make_outcome(executed=False, state=TicketState.RESOLVED, reply=reply)
+        a = assess_outcome(o, expected_decision="ESCALATE")
+        assert ViolationType.UNSAFE_REPLY_COMMITMENT in {v.type for v in a.violations}, (
+            f"明确承诺被漏检：{reply!r}"
+        )

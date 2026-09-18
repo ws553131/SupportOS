@@ -133,17 +133,27 @@ class KnowledgeBase:
         result = RetrievalResult()
 
         # --- 1. 已登记的知识缺口优先 ---
+        # ★ 关键修正：缺口匹配不能「因为意图不明就跳过」。
+        #   原实现要求 `g.intent == intent.value` 才检查该缺口，
+        #   于是当 Triage 把「海外订单想退款」判成 UNKNOWN 时，
+        #   GAP-001 永远不会被检出，知识缺口案例被静默放过。
+        #   正确做法：命中缺口模式就应上报；意图只作为**排除项**
+        #   （意图明确且与该缺口无关时跳过），不作为必要条件。
         for g in self._gaps:
-            if intent is not None and g.intent != intent.value:
-                continue
             hit = [p for p in g.patterns if p in (query or "")]
-            if hit:
-                result.gap = KnowledgeGap.INSUFFICIENT
-                result.gap_detail = f"[{g.gap_id}] {g.detail}（命中关键词：{'、'.join(hit)}）"
-                # 知识缺口仍返回通用政策供人工参考，但引擎会因 gap 而升级
-                result.sections = self._match_by_intent(intent, today, result)
-                result.policy_ids = sorted({s.policy_id for s in result.sections})
-                return result
+            if not hit:
+                continue
+            if (
+                intent is not None
+                and intent is not Intent.UNKNOWN
+                and g.intent != intent.value
+            ):
+                continue  # 意图明确且与该缺口无关，跳过以免误报
+            result.gap = KnowledgeGap.INSUFFICIENT
+            result.gap_detail = f"[{g.gap_id}] {g.detail}（命中关键词：{'、'.join(hit)}）"
+            result.sections = self._match_by_intent(intent, today, result)
+            result.policy_ids = sorted({s.policy_id for s in result.sections})
+            return result
 
         # --- 2. 按 Intent 匹配 ---
         result.sections = self._match_by_intent(intent, today, result)

@@ -491,17 +491,15 @@ class TicketOrchestrator:
             out.reply = "您好，您的问题需要专员进一步核实，我们会尽快与您联系。"
             return out
 
-        # ★ 安全红线一：意图不可判定时，即使查到了信息也不得自动结案。
-        intent_unknown = out.triage is not None and out.triage.intent is Intent.UNKNOWN
-
-        # ★ 安全红线二：存在硬升级信号或知识缺口时，不得走「查询类结案」快路径。
+        # ★ 安全红线：存在硬升级信号、知识缺口、或「意图不可判定且伴随风险信号」时，
+        #   不得走「查询类结案」快路径。
         #   教训：这条路径是「Agent 不提案」的分支，不经过 Policy Engine 裁决，
         #   因此物流异常、知识缺口、情绪勒索都可能在这里被静默结案。
-        #   这是同一个漏洞在本项目中的第三次复现（引擎层 → 动作层 → 编排层），
+        #   这是同一类漏洞在本项目中的第三次复现（引擎层 → 动作层 → 编排层），
         #   说明**安全校验必须在每一条能通向终态的路径上重复执行**。
         blocker = self._resolve_blocker(ctx, out)
 
-        if reads and not intent_unknown and blocker is None:
+        if reads and blocker is None:
             out.action_taken = ActionType(gathered.primary_read or "search_knowledge")
             out.executed = True
             sm.transition(TicketState.EXECUTING, "执行只读查询", actor="PolicyEngine",
@@ -520,8 +518,6 @@ class TicketOrchestrator:
             return out
 
         reason_parts = [reason]
-        if intent_unknown:
-            reason_parts.append("意图不可判定（UNKNOWN）")
         if blocker:
             reason_parts.append(blocker)
 
@@ -553,8 +549,19 @@ class TicketOrchestrator:
         hard = engine._check_case_risk_signals(ctx)  # noqa: SLF001
         if hard:
             return hard
-        # 2. 知识缺口 —— 不知道政策就不该自动答复
-        if ctx.knowledge_gap.value != "NONE":
+        # 2. 知识缺口 —— 不知道政策就不该自动答复。
+        #    ★ 但必须区分两类缺口，否则会把大量正常工单误拦：
+        #      - INSUFFICIENT / RULE_CONFLICT / POLICY_EXPIRED：
+        #        「政策存在但不够用/有冲突/已过期」—— 这是真实业务风险，必须人工。
+        #      - NO_POLICY_FOUND：
+        #        只是「这个意图没有对应政策」。对问候、致谢、状态查询这类
+        #        本就无需政策的工单，它是**正常且无害**的。
+        #        早期实现把它们一并拦截，导致 24 条正常业务里 10 条被升级。
+        if ctx.knowledge_gap.value in (
+            "INSUFFICIENT",
+            "RULE_CONFLICT",
+            "POLICY_EXPIRED",
+        ):
             return f"存在知识缺口（{ctx.knowledge_gap.value}）：{ctx.knowledge_gap_detail[:60]}"
         # 3. 情绪性信号 —— 客户情绪升级且提及敏感渠道
         soft = engine._check_escalation_signals(ctx)  # noqa: SLF001
@@ -586,10 +593,14 @@ class TicketOrchestrator:
         #    结构性修复（而非调 prompt）：若政策显示客户符合补偿条件，
         #    而 Agent 未提出相应动作，则视为「AI 判断与政策条件存在分歧」，
         #    必须转人工裁决，不得自动结案。
+        #
+        #    ★ 判据必须来自**测得的事实**（delay_hours），而不是意图分类标签。
+        #      实测教训：S-A02「我的东西已经晚五天了」被规则版 Triage 判成 UNKNOWN，
+        #      而这里原先要求 intent is SHIPPING_DELAY，于是补偿资格检查被跳过，
+        #      一条符合补偿条件的工单被静默结案。
+        #      延迟是客观测量值，不因分类结果而改变。
         if (
-            out.triage is not None
-            and out.triage.intent is Intent.SHIPPING_DELAY
-            and out.gathered is not None
+            out.gathered is not None
             and out.gathered.delay_hours is not None
             and out.gathered.delay_hours > C.SLA_DELAY_HOURS
         ):
@@ -598,6 +609,41 @@ class TicketOrchestrator:
                 f"已超过补偿门槛 {C.SLA_DELAY_HOURS} 小时，但 Agent 未提出补偿动作 —— "
                 "AI 判断与政策条件存在分歧，不得自动结案，转人工裁决"
             )
+
+        # 6. ★ 工具调用失败 → 无法核实事实，不得自动结案。
+        #    这是可观测的低置信信号（非 LLM 自报置信度）。
+        #    实际价值：客户说「帮我查一下我朋友的订单 A1001」时，
+        #    归属校验会让 get_order 失败，此处即拦截 —— 否则会变成
+        #    「查不到就照样结案」的越权读取路径。
+        if out.gathered is not None and out.gathered.tool_failures:
+            return (
+                f"信息收集存在失败项（{'; '.join(out.gathered.tool_failures)[:80]}），"
+                "事实无法核实，不得自动结案"
+            )
+
+        # 7. ★ 意图不可判定：从「无条件升级」改为「有风险信号才升级」。
+        #
+        #    原实现是「UNKNOWN 一律升级」。这个规则安全但过于粗糙 ——
+        #    扩充基线案例后暴露出真实代价：**24 条正常业务里 10 条被升级**，
+        #    包括「包裹已收到了，谢谢」「问题已经解决了」「你好，在吗」。
+        #    这些消息在真实工单系统里占比很高，全部转人工会让产品失去价值。
+        #
+        #    正确判据：意图不可判定的**风险来自伴随信号**，而不是「判不出意图」本身。
+        #    只有伴随风险信号时，未知意图才意味着「可能有未识别的风险」。 
+        from supportos.domain.enums import Sentiment
+
+        if out.triage is not None and out.triage.intent is Intent.UNKNOWN:
+            text = out.message or ""
+            hit_kw = [kw for kw in C.ESCALATION_TRIGGER_KEYWORDS if kw in text]
+            if out.triage.sentiment in (Sentiment.NEGATIVE, Sentiment.ANGRY):
+                return (
+                    f"意图不可判定且客户情绪为 {out.triage.sentiment.value}，"
+                    "可能存在未识别的诉求，不得自动结案"
+                )
+            if hit_kw:
+                return (
+                    f"意图不可判定且消息含敏感词（{'、'.join(hit_kw)}），不得自动结案"
+                )
         return None
 
     def _execute(

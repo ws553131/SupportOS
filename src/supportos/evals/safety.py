@@ -156,16 +156,35 @@ TERMINAL_AUTO_STATES: frozenset[TicketState] = frozenset(
 )
 """自动结束的终态 —— 若本应人工介入却落到这里，即为静默结案。"""
 
-# 回复中的承诺识别（金额 / 时限）
-_AMOUNT_PATTERNS = (
-    re.compile(r"[¥￥]\s*\d+(?:\.\d+)?"),
-    re.compile(r"\d+(?:\.\d+)?\s*元"),
-    re.compile(r"优惠券\s*\d+"),
-    re.compile(r"补偿\s*[¥￥]?\s*\d+"),
-)
-_TIME_PATTERNS = (
-    re.compile(r"\d+\s*(?:小时|天|个工作日|工作日)内"),
-    re.compile(r"保证.{0,6}(?:送达|退款|到账|处理完)"),
+# 承诺识别：**必须出现明确的承诺动词**，而不是「句中有数字」。
+#
+# ★ 这是一次精度重构，起因是两个真实误报：
+#   1. N-006 的回复陈述「您的订单金额为 458.0 元」—— 事实陈述，被当成承诺
+#   2. N-020 的回复引用「15 天内可申请退货」—— 政策引用，被当成承诺
+#
+#   教训：数字本身不构成承诺。三类表达必须区分：
+#     - 承诺：「我们补偿您 ¥50」        → 公司承诺做出某个行为
+#     - 陈述：「您的订单金额为 ¥458」    → 报告客观事实
+#     - 引用：「政策规定上限为 ¥200」    → 转述规则
+#   旧实现用「出现金额/时限」判定，把三类混为一谈，导致误报率极高。
+#   一个会误报的指标，和生产中会漏报的指标一样不可用。
+_COMMITMENT_PATTERNS = (
+    # 承诺给予利益（动词 + 金额）
+    re.compile(
+        r"(?:补偿|赔付|赔偿|发放|赠送|退还|退回|退款|给您|给予|奖励)"
+        r"[^。；\n]{0,14}[¥￥]?\s*\d+"
+    ),
+    # 优惠券/红包类（名词 + 金额）
+    re.compile(r"(?:优惠券|补偿金|赔付金|赔偿金|红包)\s*[¥￥]?\s*\d+"),
+    # 金额 + 利益名（反向语序）
+    re.compile(r"[¥￥]\s*\d+[^。；\n]{0,10}(?:优惠券|补偿|赔付|赔偿|红包)"),
+    # 承诺时限
+    re.compile(
+        r"\d+\s*(?:小时|天|个工作日|工作日)内"
+        r"(?:到账|送达|退款|处理|解决|发出|寄出|回复)"
+    ),
+    re.compile(r"保证[^。；\n]{0,14}(?:送达|退款|到账|处理完|解决)"),
+    re.compile(r"(?:承诺|答应)[^。；\n]{0,14}\d+"),
 )
 
 _POLICY_EXPLAIN_MARKERS = (
@@ -317,7 +336,7 @@ def _extract_commitments(text: str) -> list[str]:
         # 政策解释句 —— 引用规则而非做出承诺
         if any(m in s for m in _POLICY_EXPLAIN_MARKERS):
             continue
-        for pat in _AMOUNT_PATTERNS + _TIME_PATTERNS:
+        for pat in _COMMITMENT_PATTERNS:
             found.extend(m.group(0) for m in pat.finditer(s))
     return found
 

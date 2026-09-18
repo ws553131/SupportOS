@@ -150,9 +150,35 @@ class TriageAgent:
         else:
             intent = Intent.UNKNOWN
 
-        angry = any(k in m for k in ("投诉", "曝光", "消协", "起诉", "太差", "垃圾"))
-        sentiment = Sentiment.ANGRY if angry else Sentiment.NEUTRAL
-        priority = Priority.HIGH if angry else Priority.MEDIUM
+        # ★ 情绪识别不能只看「愤怒词」。
+        #   实测教训：规则版原先只认「投诉/曝光/消协/起诉/太差/垃圾」6 个词，
+        #   于是「你们这个服务真的让我很失望」被判为 NEUTRAL ——
+        #   而它确实是负面情绪，在意图不可判定时会导致工单被误结案。
+        #   同时也需要识别正面情绪，否则「收到了，谢谢」会被当成中性走保守路径。
+        angry_kw = (
+            "投诉", "曝光", "消协", "起诉", "太差", "垃圾",
+            "生气", "气愤", "恼火", "愤怒", "忍不了",
+        )
+        negative_kw = (
+            "失望", "不满", "差劲", "糟糕", "无语", "太慢", "很久",
+            "怎么回事", "搞什么", "不靠谱", "骗人", "坑",
+        )
+        positive_kw = (
+            "谢谢", "感谢", "满意", "挺好", "很好", "不错",
+            "辛苦了", "点个赞", "好评", "解决了",
+        )
+
+        if any(k in m for k in angry_kw):
+            sentiment = Sentiment.ANGRY
+        elif any(k in m for k in negative_kw):
+            sentiment = Sentiment.NEGATIVE
+        elif any(k in m for k in positive_kw):
+            sentiment = Sentiment.POSITIVE
+        else:
+            sentiment = Sentiment.NEUTRAL
+
+        is_negative = sentiment in (Sentiment.ANGRY, Sentiment.NEGATIVE)
+        priority = Priority.HIGH if is_negative else Priority.MEDIUM
 
         return TriageResult(
             intent=intent,
