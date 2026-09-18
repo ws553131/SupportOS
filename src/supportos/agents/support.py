@@ -252,13 +252,20 @@ class SupportAgent:
                 return c.model_dump(mode="json"), None
 
             if name == "get_order":
-                o = self.registry.get_order(args["order_id"])
+                # ★ 必须传归属人 —— 否则 Tool 层的归属校验形同虚设，
+                #   客户只要在消息里报出别人的订单号就能被查到。
+                #   B-17 对抗案例正是通过这条路径暴露了该缺陷。
+                o = self.registry.get_order(
+                    args["order_id"], requester_customer_id=out.customer_id
+                )
                 out.order_id = o.order_id
                 out.executed_reads.append("get_order")
                 return o.model_dump(mode="json"), None
 
             if name == "get_shipping":
-                s = self.registry.get_shipping(args["order_id"])
+                s = self.registry.get_shipping(
+                    args["order_id"], requester_customer_id=out.customer_id
+                )
                 out.executed_reads.append("get_shipping")
                 out.delay_hours = self._delay_hours(s)
                 return s.model_dump(mode="json"), None
@@ -318,13 +325,13 @@ class SupportAgent:
 
         if order_id:
             try:
-                o = self.registry.get_order(order_id)
+                o = self.registry.get_order(order_id, requester_customer_id=customer_id)
                 out.executed_reads.append("get_order")
                 facts.append(f"订单{o.order_id} 金额¥{o.amount:g} 状态{o.status.value}")
             except ToolError as e:
                 out.tool_failures.append(f"get_order: {e}")
             try:
-                s = self.registry.get_shipping(order_id)
+                s = self.registry.get_shipping(order_id, requester_customer_id=customer_id)
                 out.executed_reads.append("get_shipping")
                 out.delay_hours = self._delay_hours(s)
                 facts.append(
@@ -333,7 +340,11 @@ class SupportAgent:
             except ToolError as e:
                 out.tool_failures.append(f"get_shipping: {e}")
 
-        payload = self.registry.search_knowledge("", intent.value)
+        # ★ 必须传入客户原始消息 —— 知识缺口的识别依赖消息内容
+        #   （例如「海外订单」「定制」「套装」等模式）。
+        #   曾经这里传的是空字符串，导致「政策未覆盖该情况」在无 LLM 路径下
+        #   完全无法被识别，知识缺口案例被静默结案。
+        payload = self.registry.search_knowledge(message, intent.value)
         out.executed_reads.append("search_knowledge")
         out.policy_ids = payload.get("policy_ids", [])
         if payload.get("knowledge_gap", "NONE") != "NONE":

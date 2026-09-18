@@ -30,6 +30,7 @@ from supportos.agents.planner import ActionPlanner, PlanProposal
 from supportos.agents.support import GatheredContext, SupportAgent
 from supportos.agents.triage import TriageAgent, TriageResult
 from supportos.audit.logger import AuditLog
+from supportos import constants as C
 from supportos.domain.enums import ActionType, Decision, Intent, TicketState
 from supportos.domain.models import (
     CaseContext,
@@ -74,6 +75,9 @@ class TicketOutcome:
     action_params: dict[str, Any] = field(default_factory=dict)
     executed: bool = False
     reply: str = ""
+
+    approved_by: str | None = None
+    """人工批准者。安全判定需要它来区分「越权执行」与「获批执行」。"""
 
     audit: AuditLog | None = None
     error: str = ""
@@ -364,6 +368,7 @@ class TicketOrchestrator:
 
         sm.approve(approver, now=self.now)
         outcome.state = sm.state
+        outcome.approved_by = approver
         self._execute(action, outcome, sm, audit, ctx_now, authorized_user=approver)
         outcome.reply = self._generate_reply(
             outcome, ctx_now, outcome.decision, audit, approved=True
@@ -529,6 +534,30 @@ class TicketOrchestrator:
                     f"客户提出了 {out.triage.intent.value} 业务申请，"
                     "不得按查询类工单自动结案，需人工处理申请"
                 )
+
+        # 5. ★ 补偿资格与 Agent 判断的分歧 —— 最隐蔽的一条绕过路径。
+        #    根因：所有业务规则校验（金额上限、频次限制、风险分级）都挂在
+        #    「动作规格表」上。**只要 Agent 不提出动作（选择 send_reply），
+        #    这些检查就完全不会被执行** —— 系统进入了一个「没有检查」的状态。
+        #
+        #    LLM 倾向于用 send_reply「先安抚一下」，于是符合补偿条件的工单
+        #    被静默降级为一次普通回复，补偿被丢弃、频次限制从未被校验。
+        #
+        #    结构性修复（而非调 prompt）：若政策显示客户符合补偿条件，
+        #    而 Agent 未提出相应动作，则视为「AI 判断与政策条件存在分歧」，
+        #    必须转人工裁决，不得自动结案。
+        if (
+            out.triage is not None
+            and out.triage.intent is Intent.SHIPPING_DELAY
+            and out.gathered is not None
+            and out.gathered.delay_hours is not None
+            and out.gathered.delay_hours > C.SLA_DELAY_HOURS
+        ):
+            return (
+                f"政策显示该订单延迟 {out.gathered.delay_hours:.0f} 小时，"
+                f"已超过补偿门槛 {C.SLA_DELAY_HOURS} 小时，但 Agent 未提出补偿动作 —— "
+                "AI 判断与政策条件存在分歧，不得自动结案，转人工裁决"
+            )
         return None
 
     def _execute(

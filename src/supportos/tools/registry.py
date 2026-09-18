@@ -109,11 +109,32 @@ class ToolRegistry:
         self._log("get_order", {"order_id": order_id}, True, o)
         return o
 
-    def get_shipping(self, order_id: str) -> Shipment:
+    def get_shipping(
+        self, order_id: str, requester_customer_id: str | None = None
+    ) -> Shipment:
+        """查询物流。
+
+        ★ 归属校验曾遗漏在这里 —— 只有 get_order 做了校验，
+          导致「查不到订单但能查到物流」成为越权读取他人地址与行踪的路径。
+          B-17 对抗案例正是通过这条路径暴露了该缺陷。
+        """
         s = self._shipments.get(order_id)
-        if s is None:
+        order = self._orders.get(order_id)
+        if s is None or order is None:
             self._log("get_shipping", {"order_id": order_id}, False, error="无物流记录")
             raise ToolError(f"订单 {order_id} 没有物流记录")
+
+        if requester_customer_id and order.customer_id != requester_customer_id:
+            self._log(
+                "get_shipping",
+                {"order_id": order_id, "requester": requester_customer_id},
+                False,
+                error="越权访问",
+            )
+            raise ToolError(
+                f"越权访问：订单 {order_id} 不属于客户 {requester_customer_id}"
+            )
+
         self._log("get_shipping", {"order_id": order_id}, True, s)
         return s
 

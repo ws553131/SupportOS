@@ -88,19 +88,53 @@ class PlanProposal:
 def _is_policy_question(message: str) -> bool:
     """判断消息是否属于「政策咨询」而非「业务申请」。
 
-    ★ 这是一个真实的产品分类问题：
-      「退款政策是怎样的」与「我要退款」都含"退款"，但前者是信息咨询，
-      后者才是业务动作申请。混为一谈会让一半的咨询类工单进入审批流程。
+    ★ 这是一个真实的产品分类问题，也是一个曾经被写错的地方：
+      最初的实现是「带问号就算咨询」，结果「能补发吗？」「能不能部分退款？」
+      「赶紧补发」这类明确的业务申请全被归为咨询，
+      被走「查询类结案」路径静默关闭，客户诉求被丢弃。
 
-      用规则判断而非 LLM，因为这类句式高度确定，且规则结果可复现、可测试。
+      正确判据：只有当客户**在问规则本身**、且没有提出任何具体诉求时，才算咨询。
+      规则判断而非 LLM：这类句式高度确定，规则结果可复现、可测试。
     """
     m = message or ""
-    question_marks = ("请问", "问问", "咨询", "想问", "了解", "怎样的", "是什么", "规定", "政策", "？", "?")
-    # 出现疑问句式且没有明确动作意图词时，判为咨询
-    action_words = ("我要退款", "申请退款", "给我退", "帮我退", "要求退", "退货")
-    has_question = any(k in m for k in question_marks)
-    has_action = any(k in m for k in action_words)
-    return has_question and not has_action
+
+    # 提到「规则本身」的词 —— 这是咨询的核心特征
+    policy_indicators = (
+        "政策",
+        "规定",
+        "规则",
+        "标准",
+        "条款",
+        "怎样的",
+        "是什么",
+        "什么条件",
+        "咨询一下",
+        "了解一下",
+        "多久内",
+        "多少天内",
+    )
+    # 提出具体诉求的词 —— 出现任何一个就说明这是业务申请。
+    # ★ 这里刻意**不包含**「退款」「退货」「补发」「处理」等名词/动词本身：
+    #   它们同样出现在政策咨询里（「退款政策是怎样的」），
+    #   列进来会把咨询误判成申请，把一个普通咨询推进审批流程。
+    #   真正的判据是「表达行动意愿」的短语。
+    request_indicators = (
+        "我要",
+        "帮我",
+        "给我",
+        "要求",
+        "申请",
+        "能不能",
+        "可不可以",
+        "能否",
+        "赶紧",
+        "麻烦你",
+        "麻烦帮",
+    )
+
+    has_policy = any(k in m for k in policy_indicators)
+    has_request = any(k in m for k in request_indicators)
+    return has_policy and not has_request
 
 
 class ActionPlanner:
@@ -138,6 +172,17 @@ class ActionPlanner:
 
         if not self.use_llm:
             return self._deterministic_plan(intent, allowed, gathered)
+
+        # ★ 咨询类消息不得触发业务动作 —— 这条守卫必须作用于**两条路径**。
+        #   曾经只写在 _deterministic_plan 里，导致 LLM 模式下
+        #   「请问退款政策是怎样的」被 LLM 提案成退款申请，一个普通咨询
+        #   被推进审批流程，既浪费主管人力也损害体验。
+        #   守卫放在 plan() 而非某个具体分支里，才能覆盖所有路径。
+        if _is_policy_question(gathered.original_message):
+            return PlanProposal(
+                action=None,
+                rationale="客户在咨询政策而非提出业务申请，按查询类工单处理",
+            )
 
         try:
             return self._llm_plan(intent, gathered, allowed)
@@ -237,15 +282,7 @@ class ActionPlanner:
                     ),
                 )
 
-        # ★ 咨询类消息不应触发业务动作。
-        #   「请问退款政策是怎样的」是信息咨询，不是退款申请；
-        #   对它提案退款会把一条普通咨询推进审批流程，既浪费人力也损害体验。
-        if _is_policy_question(gathered.original_message):
-            return PlanProposal(
-                action=None,
-                rationale="客户在咨询政策而非提出业务申请，按查询类工单处理",
-            )
-
+        # ★ 咨询类消息不应触发业务动作（该守卫已上移至 plan()，此处不再重复）。
         return PlanProposal(action=preferred, rationale="规则匹配（无 LLM）")
 
     # ---------- 低置信判定 ----------

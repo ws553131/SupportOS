@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from supportos.agents.llm import LLMClient  # noqa: E402
 from supportos.domain.enums import Decision  # noqa: E402
+from supportos.evals.safety import SafetyReport, assess_outcome  # noqa: E402
 from supportos.orchestrator.workflow import TicketOrchestrator  # noqa: E402
 from supportos.tools.registry import ToolRegistry  # noqa: E402
 
@@ -45,6 +46,13 @@ def run_one(reg: ToolRegistry, case: dict, use_llm: bool, verbose: bool = True) 
     orch = TicketOrchestrator(reg, use_llm=use_llm)
     out = orch.handle(
         f"T-{case['case_id']}", case["message"], case["customer_id"], case["order_id"]
+    )
+
+    # ★ 统一安全判定 —— 与 integration_check.py 共用同一模块，口径不会分叉
+    assessment = assess_outcome(
+        out,
+        expected_decision=case["expected_decision"],
+        bypass_vector=case.get("bypass_vector", ""),
     )
 
     if verbose:
@@ -74,7 +82,15 @@ def run_one(reg: ToolRegistry, case: dict, use_llm: bool, verbose: bool = True) 
               f"需人工={'是' if out.needs_human else '否'}")
         print(f"  ⑦ 客户回复     {out.reply[:86]}")
         print("-" * 92)
-        print("  ⑧ 审计日志：")
+        if assessment.is_safe:
+            print("  ⑧ 安全判定     安全")
+        else:
+            print(f"  ⑧ 安全判定     ★ {len(assessment.violations)} 项违规")
+            for v in assessment.violations:
+                print(f"      [{v.severity.value}] {v.type.value}"
+                      + (f"  路径={v.bypass_vector}" if v.bypass_vector else ""))
+                print(f"        {v.detail}")
+        print("  ⑨ 审计日志：")
         for line in (out.audit.render().splitlines() if out.audit else []):
             print(f"      {line}")
         print()
@@ -83,6 +99,9 @@ def run_one(reg: ToolRegistry, case: dict, use_llm: bool, verbose: bool = True) 
         "case_id": case["case_id"],
         "category": case["category"],
         "is_baseline": case.get("is_baseline", False),
+        "is_bypass": case.get("is_bypass", False),
+        "bypass_vector": case.get("bypass_vector", ""),
+        "expected_decision": case["expected_decision"],
         "intent": out.triage.intent.value,
         "intent_ok": out.triage.intent.value == case["expected_intent"],
         "state": out.state.value,
@@ -90,10 +109,21 @@ def run_one(reg: ToolRegistry, case: dict, use_llm: bool, verbose: bool = True) 
         "amount": out.action_params.get("amount"),
         "decision": out.decision.decision.value if out.decision else None,
         "executed": out.executed,
-        "unsafe": out.is_unsafe,
+        "is_safe": assessment.is_safe,
+        "is_critical": assessment.is_critical,
+        "violations": [
+            {
+                "type": v.type.value,
+                "severity": v.severity.value,
+                "detail": v.detail,
+                "bypass_vector": v.bypass_vector,
+            }
+            for v in assessment.violations
+        ],
         "needs_human": out.needs_human,
         "rule_id": out.decision.rule_id if out.decision else "",
         "reply": out.reply,
+        "_assessment": assessment,
     }
 
 
@@ -125,46 +155,65 @@ def main() -> int:
     # ---------- 汇总 ----------
     total = len(results)
     intent_ok = sum(1 for r in results if r["intent_ok"])
-    unsafe = [r for r in results if r["unsafe"]]
-    edge = [r for r in results if not r["is_baseline"]]
+    edge = [r for r in results if not r["is_baseline"] and not r["is_bypass"]]
     base = [r for r in results if r["is_baseline"]]
+    bypass = [r for r in results if r["is_bypass"]]
 
-    print("=" * 92)
+    # 统一安全报告（与 integration_check.py 同一模块）
+    report = SafetyReport(assessments=[r["_assessment"] for r in results])
+
+    print("=" * 100)
     print("汇总")
-    print("=" * 92)
-    print(f"{'案例':<8}{'类别':<25}{'意图':<16}{'状态':<17}{'裁决':<19}{'执行':<5}")
-    print("-" * 92)
+    print("=" * 100)
+    print(f"{'案例':<7}{'绕过路径':<16}{'意图':<16}{'状态':<17}{'裁决':<19}{'执行':<5}{'安全':<5}")
+    print("-" * 100)
     for r in results:
-        print(f"{r['case_id']:<8}{r['category']:<25}{r['intent']:<16}"
-              f"{r['state']:<17}{str(r['decision']):<19}{'是' if r['executed'] else '否':<5}")
-    print("-" * 92)
+        vec = r["bypass_vector"][:14] if r["bypass_vector"] else "-"
+        print(f"{r['case_id']:<7}{vec:<16}{r['intent']:<16}"
+              f"{r['state']:<17}{str(r['decision']):<19}"
+              f"{'是' if r['executed'] else '否':<5}"
+              f"{'OK' if r['is_safe'] else '★违规':<5}")
+    print("-" * 100)
     print(f"意图识别正确：{intent_ok}/{total}")
-    if edge:
-        e_unsafe = sum(1 for r in edge if r["unsafe"])
-        print(f"【边缘案例】{len(edge)} 条 | 不安全自动执行 {e_unsafe}（目标 0）")
-    if base:
-        b_auto = sum(1 for r in base if r["state"] == "RESOLVED")
-        print(f"【基线案例】{len(base)} 条 | 自动完成 {b_auto} | "
-              f"自动解决率 {b_auto / len(base) * 100:.0f}%")
-    print(f"★ 不安全自动执行总数：{len(unsafe)}")
-    if unsafe:
-        for r in unsafe:
-            print(f"    !!! {r['case_id']} 在 {r['decision']} 裁决下执行了 {r['action']}")
+
+    def _grp(name: str, rows: list[dict]) -> None:
+        if not rows:
+            return
+        bad = [r for r in rows if not r["is_safe"]]
+        auto = sum(1 for r in rows if r["state"] in ("RESOLVED", "CLOSED"))
+        print(f"【{name}】{len(rows)} 条 | 自动结案 {auto} | "
+              f"违规 {len(bad)}（CRITICAL {sum(1 for r in bad if r['is_critical'])}）")
+
+    _grp("边缘案例", edge)
+    _grp("对抗性绕过案例", bypass)
+    _grp("正常业务基线", base)
+
+    print("-" * 100)
+    print(report.render(title="统一安全报告"))
+    print()
+
+    for r in results:
+        if not r["is_safe"]:
+            print(f"  !!! {r['case_id']} [{r['bypass_vector'] or '常规路径'}]")
+            for v in r["violations"]:
+                print(f"      [{v['severity']}] {v['type']}: {v['detail'][:90]}")
 
     if llm is not None:
         s = llm.summary()
-        print("-" * 92)
+        print("-" * 100)
         print(f"LLM 调用 {s['calls']} 次 | Token {s['total_tokens']} | "
               f"估算成本 ¥{s['est_cost_cny']:.4f}")
 
     out_dir = ROOT / "data" / "evals"
     out_dir.mkdir(parents=True, exist_ok=True)
+    serializable = [{k: v for k, v in r.items() if k != "_assessment"} for r in results]
     (out_dir / "demo_result.json").write_text(
-        json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"结果已保存：data/evals/demo_result.json")
-    print("=" * 92)
-    return 1 if unsafe else 0
+    print("结果已保存：data/evals/demo_result.json")
+    print("=" * 100)
+    # 退出码：存在任何违规即失败（安全优先于其他所有指标）
+    return 1 if report.unsafe else 0
 
 
 if __name__ == "__main__":
