@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SupportOS 系统架构</title>
+<style>
+  :root { --fg:#24292f; --muted:#57606a; --border:#d0d7de; --bg:#ffffff; --code:#f6f8fa; }
+  * { box-sizing: border-box; }
+  body {
+    max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--fg); background: var(--bg); line-height: 1.7;
+  }
+  h1 { font-size: 2em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+  h2 { font-size: 1.5em; margin-top: 2.2em; border-bottom: 1px solid var(--border); padding-bottom: .25em; }
+  h3 { font-size: 1.2em; margin-top: 1.8em; }
+  h4 { font-size: 1.05em; margin-top: 1.5em; color: var(--muted); }
+  code { background: var(--code); padding: .15em .4em; border-radius: 4px; font-size: .88em;
+         font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+  pre { background: var(--code); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: .94em; }
+  th, td { border: 1px solid var(--border); padding: 7px 12px; text-align: left; }
+  th { background: var(--code); font-weight: 600; }
+  blockquote { border-left: 4px solid #d0d7de; margin: 1em 0; padding: .2em 1em;
+               color: var(--muted); background: #fafbfc; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5em 0; }
+  .mermaid { margin: 1.6em 0; text-align: center; }
+  a { color: #0969da; }
+  .banner { background: #fff8e1; border: 1px solid #f0c36d; border-radius: 8px;
+            padding: 10px 16px; font-size: .88em; color: #7a5b00; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<div class="banner">
+  本页由 <code>scripts/build_architecture_preview.mjs</code> 从
+  <code>架构.md</code> 自动生成 —— 请勿直接编辑本文件，
+  改动会随下次生成被覆盖。
+</div>
+<h1>SupportOS 系统架构</h1>
+<p>&gt; 本文描述的是<strong>实际实现的架构</strong>，不是设计愿景。</p>
+<p>&gt; 所有模块名、类名、数据流均可在仓库中对应到源码。</p>
+<p>&gt;</p>
+<p>&gt; 图表使用 Mermaid 语法，在 GitHub / VS Code / Notion 中可直接渲染。</p>
+<p>&gt; 本地预览：用浏览器打开 <a href="architecture.html"><code>architecture.html</code></a>。</p>
+<hr/>
+<h2>一、分层架构</h2>
+<div class="mermaid">flowchart TB
+    subgraph ENTRY["🎬 入口层 · scripts/"]
+        direction LR
+        E1["demo.py<br/><i>端到端演示</i>"]
+        E2["integration_check.py<br/><i>规范评测</i>"]
+        E3["ablation.py<br/><i>消融实验</i>"]
+        E4["approval_demo.py<br/><i>审批流闭环</i>"]
+    end
+
+    subgraph ORCH["🚦 编排层 · orchestrator/"]
+        direction LR
+        O1["TicketOrchestrator<br/><i>串接全流程 · 自身不做判断</i>"]
+        O2["TicketStateMachine<br/><i>9 状态 · 约束执行路径</i>"]
+    end
+
+    subgraph AGENTS["🤖 Agent 层 · agents/  —— LLM 只做提案"]
+        direction LR
+        A1["TriageAgent<br/>识别意图"]
+        A2["SupportAgent<br/>只读收集上下文"]
+        A3["ActionPlanner<br/>选动作 · 不含金额"]
+    end
+
+    subgraph POLICY["⚖️ 策略层 · policy/  ★ 核心 —— 规则做裁决"]
+        direction LR
+        P1["PolicyEngine<br/>四选一裁决"]
+        P2["permissions<br/>权限模型"]
+        P3["amounts<br/>金额计算"]
+    end
+
+    subgraph AUDIT["📜 审计层 · audit/"]
+        U1["AuditLog<br/>全链路留痕"]
+    end
+
+    subgraph TOOLS["🔧 工具层 · tools/"]
+        direction LR
+        T1["ToolRegistry<br/>4 读 + 3 写<br/><b>无 refund_money</b>"]
+        T2["KnowledgeBase<br/>结构化政策检索"]
+    end
+
+    subgraph DOMAIN["📦 领域层 · domain/ + constants.py"]
+        direction LR
+        D1["enums<br/>Intent / RiskLevel<br/>Decision / TicketState"]
+        D2["models<br/>CaseContext<br/>PolicyDecision"]
+        D3["constants.py<br/><i>全部阈值集中于此</i>"]
+    end
+
+    subgraph EVALS["🧪 评测层 · evals/"]
+        direction LR
+        V1["safety.py<br/>6 类违规判定"]
+        V2["metrics.py<br/>11 项指标"]
+        V3["variants.py<br/>V0 / V1 / V2"]
+        V4["bypass_cases.py<br/>20 条对抗案例"]
+    end
+
+    ENTRY ==> ORCH
+    ORCH ==> AGENTS
+    ORCH ==> POLICY
+    ORCH ==> AUDIT
+    AGENTS --> TOOLS
+    POLICY --> TOOLS
+    TOOLS --> DOMAIN
+    EVALS -.->|"共用同一编排器<br/>与同一安全判定口径"| ORCH
+
+    style POLICY fill:#fff4e6,stroke:#e8590c,stroke-width:2px
+    style AGENTS fill:#e7f5ff,stroke:#1971c2
+    style EVALS fill:#f3f0ff,stroke:#7048e8
+    style TOOLS fill:#ebfbee,stroke:#2f9e44</div>
+<p><strong>分层原则</strong>：上层可以调用下层，下层<strong>绝不反向依赖</strong>上层。</p>
+<p><code>policy/</code> 不知道 <code>agents/</code> 的存在，<code>domain/</code> 不知道任何其他模块。</p>
+<p>这使得 <strong>Policy Engine 可以在完全不启动 LLM 的情况下被单元测试</strong></p>
+<p>（项目里的 42 项决策自查就是这么跑的）。</p>
+<hr/>
+<h2>二、一次工单的完整时序</h2>
+<div class="mermaid">sequenceDiagram
+    autonumber
+    participant C as 客户
+    participant O as TicketOrchestrator
+    participant T as TriageAgent
+    participant S as SupportAgent
+    participant TR as ToolRegistry
+    participant P as ActionPlanner
+    participant R as 规则引擎
+    participant PE as PolicyEngine
+    participant SM as 状态机
+    participant A as AuditLog
+
+    C->>O: "我的东西已经晚五天了，<br/>你们到底什么时候送到？"
+    O->>T: triage(message)
+    T-->>O: intent=SHIPPING_DELAY<br/>priority=HIGH / sentiment=NEGATIVE
+    Note over O,SM: NEW → TRIAGING → RESEARCHING
+
+    O->>S: gather(message, intent)
+    S->>TR: get_order / get_shipping / search_knowledge
+    TR-->>S: 订单 · 物流 · 命中政策 3 条
+    S-->>O: GatheredContext<br/>{delay_hours, policy_ids, executed_reads}
+
+    O->>O: build_context → CaseContext<br/>（同时存为「审批时快照」）
+
+    Note over O,SM: RESEARCHING → PLANNING
+
+    O->>P: plan(intent, gathered)
+    P-->>O: 动作 = ISSUE_COUPON<br/><b>提案中不含金额</b>
+
+    O->>R: compute_params(intent, ctx)
+    R-->>O: amount = ¥10<br/>依据 = 政策 §3.1 区间下沿
+
+    O->>PE: evaluate(action, ctx)
+    Note over PE: 8 步顺序检查<br/>（详见下一节）
+    PE-->>O: PolicyDecision<br/>AUTO / APPROVAL_REQUIRED<br/>ESCALATE / DENY
+
+    O->>SM: route_by_decision
+
+    alt AUTO 自动执行
+        O->>TR: issue_coupon
+        TR-->>O: 产生副作用
+        O-->>C: "已为您发放 ¥10 优惠券"
+    else APPROVAL_REQUIRED 人工审批
+        O-->>C: "已转专员处理"
+        Note over O: 工单停在 WAITING_APPROVAL
+    else ESCALATE / DENY
+        O-->>C: "需要专员进一步核实"
+    end
+
+    O->>A: 每一步留痕（含规则 ID）</div>
+<hr/>
+<h2>三、Policy Engine 决策流</h2>
+<p>这是整个系统的核心。<strong>检查顺序即优先级</strong>——越靠前越优先拦截。</p>
+<div class="mermaid">flowchart TD
+    START(["输入<br/>ProposedAction + CaseContext"]) --> C0{"0. 自审批？<br/><i>Proposal Agent ≠ Approval Authority</i>"}
+    C0 -->|是| DENY
+    C0 -->|否| C1{"1. 明确禁止的动作？<br/><i>refund_money / ban_account ...</i>"}
+    C1 -->|是| DENY
+    C1 -->|否| C2{"2. 前置信息完整？"}
+    C2 -->|否| ESC
+    C2 -->|是| C21{"2.1 意图不可判定？"}
+    C21 -->|"是 且非只读动作"| ESC
+    C21 -->|"否 或 只读"| C22{"2.2 情境性硬信号？<br/><i>丢件 / 物流异常 / SLA 严重违约</i>"}
+    C22 -->|命中| ESC
+    C22 -->|否| C3{"3. 知识缺口？<br/><i>禁止编造规则</i>"}
+    C3 -->|存在| ESC
+    C3 -->|无| C4{"4. deny_if 谓词命中？"}
+    C4 -->|是| DENY
+    C4 -->|否| C5{"5. escalate_if 谓词命中？"}
+    C5 -->|"是（收集全部命中理由）"| ESC
+    C5 -->|否| C6{"6. 情绪升级信号？"}
+    C6 -->|"是 且写操作"| ESC
+    C6 -->|否| C7{"7. approve_if 谓词命中？"}
+    C7 -->|是| APPR
+    C7 -->|否| AUTO
+
+    AUTO(["✅ AUTO<br/>自动执行"])
+    APPR(["👤 APPROVAL_REQUIRED<br/>人工审批"])
+    ESC(["🚨 ESCALATE<br/>强制升级"])
+    DENY(["⛔ DENY<br/>拒绝"])
+
+    style AUTO fill:#d3f9d8,stroke:#2f9e44,stroke-width:2px
+    style APPR fill:#fff3bf,stroke:#f08c00,stroke-width:2px
+    style ESC fill:#ffe3e3,stroke:#c92a2a,stroke-width:2px
+    style DENY fill:#e9ecef,stroke:#495057,stroke-width:2px</div>
+<h3>动作规格表：数据驱动而非 if-else 面条</h3>
+<pre><code>ActionType.ISSUE_COUPON: ActionSpec(
+    risk=RiskLevel.YELLOW,
+    deny_if=(_p_amount_positive, _p_over_user_coupon_limit, _p_delay_below_sla),
+    escalate_if=(_p_coupon_frequency_exceeded, _p_daily_coupon_total_exceeded),
+    approve_if=(_p_over_agent_coupon_limit,),
+    require_policy=True,
+)</code></pre>
+<p><strong>新增一个动作 = 加一条数据，不改引擎逻辑。</strong></p>
+<p>每条规则都是独立可测的谓词函数，出错时能定位到具体哪一个。</p>
+<hr/>
+<h2>四、审批后重新校验（项目的核心机制之一）</h2>
+<p><strong>"批准时成立" ≠ "执行时成立"。</strong></p>
+<p>主管可能在数小时后才批复，期间订单可能已被其他渠道退款、</p>
+<p>客户可能又从别的客服那里领了券。</p>
+<div class="mermaid">sequenceDiagram
+    autonumber
+    participant O as TicketOrchestrator
+    participant PE as PolicyEngine
+    participant H as 主管
+    participant EXT as 外部渠道
+    participant TR as ToolRegistry
+
+    Note over O,PE: t0 裁决时刻
+    O->>PE: evaluate(action, ctx_before)
+    PE-->>O: APPROVAL_REQUIRED
+    O->>O: 保存 ctx_before 快照
+    Note over O: 工单 = WAITING_APPROVAL<br/><b>Agent 未执行任何写操作</b>
+
+    Note over EXT: ⏳ 数小时后 ...
+    EXT->>TR: 财务渠道直接退款了该订单
+
+    H->>O: 点击「批准」
+    O->>TR: refresh_context() 重新读取
+    TR-->>O: 订单状态已变为 REFUNDED
+
+    O->>PE: revalidate(action, ctx_before, ctx_now)
+    Note over PE: 重新跑完整裁决流程
+    PE-->>O: 裁决已变化 → REVALIDATE_FAILED
+
+    O->>O: ⛔ 中止执行 + 升级
+    Note over O: 工单 = ESCALATED<br/><b>未产生重复退款请求</b></div>
+<h3>实验结果（同一批需审批案例）</h3>
+<p>&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;变体&lt;/th&gt;&lt;th&gt;执行了写操作&lt;/th&gt;&lt;th&gt;审批后中止&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;V0 纯 LLM&lt;/td&gt;&lt;td&gt;1/2&lt;/td&gt;&lt;td&gt;0/2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;V1 +Policy Engine&lt;/td&gt;&lt;td&gt;&lt;strong&gt;2/2&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;0/2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;strong&gt;V2 +审批 Gate&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;&lt;strong&gt;0/2&lt;/strong&gt;&lt;/td&gt;&lt;td&gt;&lt;strong&gt;2/2&lt;/strong&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p>
+<p><strong>这个贡献无法被 Policy Engine 替代</strong>：</p>
+<p>变化发生在裁决<strong>之后</strong>，只有在执行前再校验一次才拦得住。</p>
+<hr/>
+<h2>五、状态机：约束 Agent 的执行路径</h2>
+<div class="mermaid">stateDiagram-v2
+    [*] --> NEW
+    NEW --> TRIAGING: 收到客户消息
+    NEW --> CLOSED: 垃圾工单
+
+    TRIAGING --> RESEARCHING: 意图已识别
+    TRIAGING --> ESCALATED
+
+    RESEARCHING --> PLANNING: 上下文已收集
+    RESEARCHING --> ESCALATED: 信息收集失败
+
+    PLANNING --> EXECUTING: ✅ Policy 判 AUTO
+    PLANNING --> WAITING_APPROVAL: 👤 需人工审批
+    PLANNING --> ESCALATED: 🚨 高风险 / 受阻断
+    PLANNING --> RESOLVED: ❌ 非法流转
+    PLANNING --> CLOSED: ❌ 非法流转
+
+    WAITING_APPROVAL --> EXECUTING: 批准 + 重新校验通过
+    WAITING_APPROVAL --> ESCALATED: 重新校验失败 / 被驳回
+    WAITING_APPROVAL --> RESOLVED: 查询类工单
+    WAITING_APPROVAL --> CLOSED: ❌ 非法流转
+
+    EXECUTING --> RESOLVED: 执行完成
+    EXECUTING --> ESCALATED: 执行失败
+
+    ESCALATED --> RESOLVED: 人工处理完毕
+    ESCALATED --> CLOSED
+    ESCALATED --> EXECUTING: ❌ 非法流转
+
+    RESOLVED --> CLOSED
+    RESOLVED --> EXECUTING: ❌ 非法流转
+
+    CLOSED --> [*]
+    CLOSED --> EXECUTING: ❌ 非法流转</div>
+<p><strong>被显式禁止的流转</strong>（<code>FORBIDDEN_RATIONALE</code> 里逐条记录了原因）：</p>
+<p>&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;非法流转&lt;/th&gt;&lt;th&gt;为什么禁止&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;PLANNING → RESOLVED&lt;/code&gt;&lt;/td&gt;&lt;td&gt;规划完成不等于问题已解决&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;WAITING_APPROVAL → CLOSED&lt;/code&gt;&lt;/td&gt;&lt;td&gt;审批未决不得关闭工单&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;ESCALATED → EXECUTING&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Agent 不能从升级态自行恢复执行&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;RESOLVED → EXECUTING&lt;/code&gt;&lt;/td&gt;&lt;td&gt;已解决不得重新执行，需新建工单&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;CLOSED → *&lt;/code&gt;&lt;/td&gt;&lt;td&gt;终态不可变&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p>
+<p><code>assert_no_bypass()</code> 会校验：</p>
+<p><strong>任何一次进入 EXECUTING，此前必须有 Policy Engine 裁决或人工审批记录。</strong></p>
+<hr/>
+<h2>六、五个不可动摇的设计约束</h2>
+<div class="mermaid">flowchart LR
+    subgraph C1["约束 1<br/>LLM 提案 / 规则裁决"]
+        direction TB
+        X1["LLM：退款 ¥399"] --> X2["PolicyEngine：<br/>risk=RED → ESCALATE"] --> X3["结果：不执行"]
+    end
+    subgraph C2["约束 2<br/>Agent ≤ Human"]
+        direction TB
+        Y1["User Permission"] --> Y2["∩ Agent Policy"] --> Y3["∩ Risk Policy"]
+    end
+    subgraph C3["约束 3<br/>能力收口"]
+        direction TB
+        Z1["有 issue_coupon"] --> Z2["无 refund_money"] --> Z3["Agent 无法直接动钱"]
+    end
+    style C1 fill:#e7f5ff,stroke:#1971c2
+    style C2 fill:#fff4e6,stroke:#e8590c
+    style C3 fill:#ebfbee,stroke:#2f9e44</div>
+<h3>约束 1：LLM 决定"想做什么"，规则系统决定"能不能做"</h3>
+<p><code>ActionPlanner</code> 的输出是 <code>PlanProposal</code>，<strong>它没有权限执行任何东西</strong>。</p>
+<p><code>PolicyEngine.evaluate()</code> 是唯一的裁决入口。</p>
+<h3>约束 2：Agent Permission ≤ Human Permission</h3>
+<pre><code>Effective Agent Permission
+  = User Permission          # 发起工单的客服权限
+  ∩ Agent Policy             # 系统对 AI 的额外限制（更严）
+  ∩ Risk Policy              # 动作本身的风险约束</code></pre>
+<p>普通客服最多发 ¥50 券 → Agent 最多发 ¥30。</p>
+<p><strong>Agent 权限挂在发起工单的客服身上，不挂在审批人身上。</strong></p>
+<h3>约束 3：能力收口 —— 没有能力，就没有越权</h3>
+<p>暴露给 LLM 的只有 7 个工具：</p>
+<p><code>get_customer · get_order · get_shipping · search_knowledge · issue_coupon · request_refund · request_replacement</code></p>
+<p><strong>没有 <code>refund_money</code>，只有 <code>request_refund</code>。</strong></p>
+<p>它在能力层面就无法直接动钱——即使 Policy Engine 被绕过，</p>
+<p>Agent 手里也没有能直接退款的工具。这是纵深防御的第一层。</p>
+<h3>约束 4：状态机约束执行路径</h3>
+<p>见上一节。</p>
+<h3>约束 5：审批后必须重新校验</h3>
+<p>见第四节。</p>
+<hr/>
+<h2>七、关键数据结构</h2>
+<div class="mermaid">classDiagram
+    class CaseContext {
+        +Ticket ticket
+        +Customer customer
+        +Order order
+        +Shipment shipment
+        +list~str~ policy_ids
+        +KnowledgeGap knowledge_gap
+        +datetime now
+        +delay_hours() float
+        +days_since_delivery() int
+    }
+    class ProposedAction {
+        +ActionType action
+        +dict params
+        +str rationale
+        <i>提案 ≠ 执行</i>
+    }
+    class PolicyDecision {
+        +Decision decision
+        +RiskLevel risk
+        +str rule_id
+        +str reason
+        +Evidence evidence
+    }
+    class Evidence {
+        +str recommendation
+        +list~str~ business_rules
+        +list~str~ customer_context
+        +list~str~ supporting_data
+        <i>结构化依据，非模型内部推理</i>
+    }
+    class GatheredContext {
+        +str order_id
+        +list~str~ policy_ids
+        +float delay_hours
+        +list~str~ tool_failures
+        +list~str~ executed_reads
+    }
+    class TicketOutcome {
+        +State state
+        +bool executed
+        +str approved_by
+        +CaseContext context
+        +AuditLog audit
+    }
+
+    CaseContext --> ProposedAction : 裁决输入
+    ProposedAction --> PolicyDecision : 裁决输出
+    PolicyDecision --> Evidence
+    CaseContext --> TicketOutcome : 快照
+    TicketOutcome --> PolicyDecision
+    GatheredContext --> CaseContext : 组装</div>
+<p>&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;结构&lt;/th&gt;&lt;th&gt;位置&lt;/th&gt;&lt;th&gt;作用&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;CaseContext&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;domain/models.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;strong&gt;裁决的唯一输入&lt;/strong&gt;。可被完整序列化，用于复现与审计&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;ProposedAction&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;domain/models.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Agent 的&lt;strong&gt;提案&lt;/strong&gt;。&lt;strong&gt;不等于执行&lt;/strong&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;PolicyDecision&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;domain/models.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;裁决结果 + 命中规则 ID + Decision Evidence&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;Evidence&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;domain/models.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;strong&gt;Decision Evidence&lt;/strong&gt; —— 展示给用户的结构化依据，而非模型内部推理过程&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;GatheredContext&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;agents/support.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;信息收集结果，含工具失败记录（可观测置信信号）&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;TicketOutcome&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;orchestrator/workflow.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;完整处理结果 + &lt;strong&gt;上下文快照&lt;/strong&gt;（重新校验的基准）&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;ActionSpec&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;policy/engine.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;数据驱动的动作规格表&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p>
+<hr/>
+<h2>八、评测架构：为什么它与主系统平级</h2>
+<p><code>evals/</code> 不是"测试代码"。它回答的是<strong>不同维度</strong>的问题：</p>
+<div class="mermaid">flowchart LR
+    subgraph Q["四个不同的问题"]
+        Q1["这次处理<br/><b>是否安全？</b>"]
+        Q2["这批处理<br/><b>整体表现如何？</b>"]
+        Q3["治理层<br/><b>到底贡献了什么？</b>"]
+        Q4["系统<br/><b>能从哪条路被绕过？</b>"]
+    end
+    Q1 --> M1["safety.py<br/>6 类违规分类"]
+    Q2 --> M2["metrics.py<br/>11 项指标"]
+    Q3 --> M3["variants.py<br/>V0 / V1 / V2"]
+    Q4 --> M4["bypass_cases.py<br/>20 条对抗案例"]
+
+    style M1 fill:#ffe3e3,stroke:#c92a2a
+    style Q1 fill:#ffe3e3,stroke:#c92a2a</div>
+<p><strong>关键设计</strong>：主系统与评测层<strong>共用同一套编排器和同一套安全判定</strong>。</p>
+<p>历史上 <code>integration_check.py</code> 曾自建一套判定逻辑，与 <code>demo.py</code> 分叉——</p>
+<p><strong>那正是安全漏洞被漏报的根源</strong>。现在口径只有一处（<code>evals/safety.py</code>）。</p>
+<h3>一次真实教训</h3>
+<p>最初的安全定义是"有没有在未经授权的情况下执行写操作"。</p>
+<p>跑出来报告"不安全 0"，看起来很漂亮。</p>
+<p>但它漏掉了<strong>静默结案</strong>——AI 没执行写操作，只是自动把工单关了。</p>
+<p><strong>这不是没违规，是没测。</strong></p>
+<p>重做判定口径（按违规类型分 6 类）后，同一个系统立刻报出 7 项违规，其中 5 个是真 bug。</p>
+<p>&gt; <strong>一个从不报警的指标，比没有指标更危险。</strong></p>
+<hr/>
+<h2>九、代码规模</h2>
+<p>&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;部分&lt;/th&gt;&lt;th&gt;行数&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;主系统（&lt;code&gt;src/&lt;/code&gt;，含评测层）&lt;/td&gt;&lt;td&gt;约 7,300 行&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;脚本（&lt;code&gt;scripts/&lt;/code&gt;）&lt;/td&gt;&lt;td&gt;约 2,100 行&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;单元测试（&lt;code&gt;tests/&lt;/code&gt;）&lt;/td&gt;&lt;td&gt;171 个测试，全部通过&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p>
+<p>&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;最大的三个模块&lt;/th&gt;&lt;th&gt;行数&lt;/th&gt;&lt;th&gt;说明&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;orchestrator/workflow.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;857&lt;/td&gt;&lt;td&gt;流程串接 + 审批闭环&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;tools/mock_data.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;664&lt;/td&gt;&lt;td&gt;数据集生成器（含刻意埋入的边缘 case）&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;code&gt;policy/engine.py&lt;/code&gt;&lt;/td&gt;&lt;td&gt;662&lt;/td&gt;&lt;td&gt;裁决引擎 + 动作规格表&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;</p>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: '-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
+      fontSize: "14px",
+      primaryColor: "#e7f5ff",
+      primaryBorderColor: "#1971c2",
+      lineColor: "#868e96",
+    },
+    flowchart: { curve: "basis", useMaxWidth: true },
+    sequence: { useMaxWidth: true },
+    state: { useMaxWidth: true },
+  });
+</script>
+</body>
+</html>

@@ -35,3 +35,8 @@ tmp/
 
 # ---- 外部公开数据集（不重新分发，用 scripts/fetch_external_data.py 获取）----
 data/external/
+
+# ---- 文档工具链（仅用于本地校验/生成图表，不入库）----
+node_modules/
+package-lock.json
+.npmcache/

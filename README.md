@@ -701,3 +701,37 @@ V0/V1 里有些案例的 Planner 根本不提案（直接结案），
 但 **Python 的 `urllib` 使用自带 OpenSSL 栈可正常下载**。
 数据获取脚本因此用 Python 实现（`scripts/fetch_external_data.py`），
 数据集本身已加入 `.gitignore`，不随仓库分发。
+
+---
+
+## 系统架构
+
+完整的架构说明见 **[`docs/架构.md`](docs/架构.md)**（含 8 张 Mermaid 图，
+在 GitHub 上直接渲染）。本地预览可打开 `docs/architecture.html`。
+
+包含：
+
+| 图 | 内容 |
+|---|---|
+| 分层架构 | 6 层职责与依赖方向（下层绝不反向依赖上层） |
+| 工单时序 | 一次工单从客户消息到审计留痕的完整数据流 |
+| 决策流 | Policy Engine 的 8 步顺序检查（顺序即优先级） |
+| 审批重新校验 | 「批准时成立 ≠ 执行时成立」的时序演示 |
+| 状态机 | 9 状态 + 5 条被显式禁止的流转 |
+| 设计约束 | 三个不可动摇的约束 |
+| 数据结构 | 关键类与它们的关系 |
+| 评测架构 | 为什么评测层与主系统平级 |
+
+### 文档工具链
+
+图表用脚本保证质量，不靠人工检查：
+
+```powershell
+# 校验所有 Mermaid 图语法（语法错误会导致静默渲染成空白，肉眼难发现）
+node scripts\validate_diagrams.mjs "docs\架构.md"
+
+# 从 Markdown 生成自包含的 HTML 预览页（避免手写 HTML 与源文件分叉）
+node scripts\build_architecture_preview.mjs "docs\架构.md" "docs\architecture.html"
+```
+
+> 依赖：`npm install --no-save mermaid jsdom`（已加入 .gitignore）
