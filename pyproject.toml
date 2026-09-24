@@ -14,12 +14,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-web = ["fastapi", "uvicorn", "jinja2"]
-dev = ["pytest", "pytest-cov"]
+# ★ 注意：V0.1 **没有实现 Web UI**，因此这里不声明 fastapi / uvicorn / jinja2。
+#   曾一度声明过 —— 那会造成「依赖清单写着 Web 框架、代码里一行没用」的
+#   虚假信号，面试追问时会立刻露馅。
+#   若将来实现 UI，在此处加回即可。
+dev = ["pytest"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# 测试用标准 pytest 写法，但在受限环境下（无法安装 pytest）可用自带的
+# 兼容运行器执行：python scripts/run_tests.py
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
