@@ -138,10 +138,11 @@ PRESETS: list[dict] = [
     },
     {
         "key": "5",
-        "name": "★ 退款 ¥300 但客服权限只有 ¥200",
-        "desc": "对比上一个：这次是「权限不够」而不是「超过审批线」",
+        "name": "★ 资深客服（权限 ¥500）处理 ¥300 退款",
+        "desc": "对比场景 4：这次客服有权批，但金额仍超政策审批线 ¥200",
         "action": ActionType.REQUEST_REFUND,
         "amount": 300.0,
+        "role": "AGENT_L2",
         "tier": CustomerTier.NORMAL,
         "delay_hours": 0,
         "coupon_7d": 0,
@@ -278,9 +279,9 @@ def build_context(p: dict, message: str = "") -> CaseContext:
     )
 
 
-def show_checks(action: ProposedAction, ctx: CaseContext) -> None:
+def show_checks(action: ProposedAction, ctx: CaseContext, role: str = "AGENT_L1") -> None:
     """逐项展示引擎会检查的谓词 —— 用的是引擎里真实的谓词函数。"""
-    perm = effective_agent_permission("AGENT_L1")
+    perm = effective_agent_permission(role)
     spec = ACTIONS.get(action.action)
     if spec is None:
         print("  （该动作没有规格表）")
@@ -318,6 +319,7 @@ def run_preset(p: dict) -> None:
     print("=" * 88)
 
     ctx = build_context(p)
+    role = p.get("role", "AGENT_L1")
     params = {}
     if p.get("amount") is not None:
         params["amount"] = p["amount"]
@@ -326,6 +328,8 @@ def run_preset(p: dict) -> None:
     # --- 输入概览 ---
     print()
     print("  输入：")
+    print(f"      发起客服    {role}"
+          + ("（资深，可自行审批 ¥500 以内的退款）" if role == "AGENT_L2" else "（一线，退款权限 ¥200）"))
     print(f"      动作        {p['action'].value}（{ACTION_CN.get(p['action'], '')}）")
     if p.get("amount") is not None:
         print(f"      金额        ¥{p['amount']:g}")
@@ -342,10 +346,10 @@ def run_preset(p: dict) -> None:
         print(f"      客户原话    {p['message']}")
 
     # --- 逐项检查 ---
-    show_checks(action, ctx)
+    show_checks(action, ctx, role)
 
     # --- 最终裁决 ---
-    engine = PolicyEngine(meta=CaseMeta(requester_id="U100", requester_role="AGENT_L1"))
+    engine = PolicyEngine(meta=CaseMeta(requester_id="U100", requester_role=role))
     d = engine.evaluate(action, ctx)
 
     label, explain = DECISION_CN[d.decision]

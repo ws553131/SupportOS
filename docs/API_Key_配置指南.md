@@ -63,12 +63,15 @@ notepad .env
 SUPPORTOS_LLM_API_KEY=sk-你的deepseek密钥
 ```
 
-把 `sk-你的deepseek密钥` 替换成你刚才复制的真实 Key，保存。改完应该是这样：
+把 `sk-你的deepseek密钥` 替换成你刚才复制的真实 Key，保存。改完应该长这样：
 
 ```
-SUPPORTOS_LLM_API_KEY=sk-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+SUPPORTOS_LLM_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+> ⚠️ **上面是占位符，不是真 Key。** 这里刻意用 `xxxx` 而不是像真 Key 的字符，
+> 避免被 GitHub 的密钥扫描误报，也避免读者误以为这是一把可用的密钥。
+>
 > ⚠️ **等号两边不要加空格**，Key 前后也不要加引号。
 
 ---
